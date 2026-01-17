@@ -363,7 +363,7 @@ void SubharmonicSynthesis::blendSignals(
     float* subharmonic,
     float* output,
     int num_samples,
-    VoiceState& state
+    [[maybe_unused]] VoiceState& state
 ) {
     // Blend fundamental and subharmonic
     for (int i = 0; i < num_samples; ++i) {

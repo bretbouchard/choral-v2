@@ -12,7 +12,7 @@
 #include "ISynthesisMethod.h"
 #include "../dsp/FormantResonator.h"
 #include "../dsp/LinearSmoother.h"
-#include "../core/Phoneme.h"
+#include "../core/PhonemeDatabase.h"
 #include <array>
 #include <memory>
 #include <vector>

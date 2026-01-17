@@ -9,7 +9,7 @@ using namespace ChoirV2;
 // Test constants
 const double SAMPLE_RATE = 44100.0;
 const float TEST_FREQUENCY = 220.0f; // A3
-const float TEST_TOLERANCE = 0.01f; // 1% tolerance
+[[maybe_unused]] const float TEST_TOLERANCE = 0.01f; // 1% tolerance
 
 void testSubharmonicGeneratorBasicOutput() {
     std::cout << "Testing SubharmonicGenerator basic output..." << std::endl;
@@ -249,7 +249,7 @@ void testSubharmonicGeneratorDifferentRatios() {
 
         // Verify PLL stays locked (small phase error)
         // Use relaxed tolerance for non-power-of-2 ratios
-        float tolerance = (ratio == 0.5f) ? 0.1f : 0.25f;
+        [[maybe_unused]] float tolerance = (ratio == 0.5f) ? 0.1f : 0.25f;
         assert(maxPhaseError < tolerance && "PLL remains locked for ratio");
 
         // Verify output is reasonable (non-zero and bounded)

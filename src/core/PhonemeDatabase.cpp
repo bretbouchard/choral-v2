@@ -16,31 +16,35 @@
 namespace ChoirV2 {
 
 // ============================================================================
-// Phoneme Helper Methods
+// PhonemeCategory Conversion Functions
 // ============================================================================
 
-float Phoneme::getFormantFrequency(int index) const {
-    switch (index) {
-        case 0: return formants.f1;
-        case 1: return formants.f2;
-        case 2: return formants.f3;
-        case 3: return formants.f4;
-        default: return 0.0f;
+std::string phonemeCategoryToString(PhonemeCategory category) {
+    switch(category) {
+        case PhonemeCategory::Vowel: return "vowel";
+        case PhonemeCategory::Consonant: return "consonant";
+        case PhonemeCategory::Drone: return "drone";
+        case PhonemeCategory::Formant: return "formant";
+        case PhonemeCategory::Subharmonic: return "subharmonic";
+        case PhonemeCategory::Pulsed: return "pulsed";
+        default: 
+            std::cerr << "Warning: Unknown PhonemeCategory value, defaulting to 'vowel'" << std::endl;
+            return "vowel";
     }
 }
 
-float Phoneme::getFormantBandwidth(int index) const {
-    switch (index) {
-        case 0: return formants.bw1;
-        case 1: return formants.bw2;
-        case 2: return formants.bw3;
-        case 3: return formants.bw4;
-        default: return 0.0f;
-    }
-}
-
-bool Phoneme::hasFormant(int index) const {
-    return index >= 0 && index <= 3;
+PhonemeCategory stringToPhonemeCategory(const std::string& str) {
+    if (str == "vowel") return PhonemeCategory::Vowel;
+    if (str == "consonant") return PhonemeCategory::Consonant;
+    if (str == "drone") return PhonemeCategory::Drone;
+    if (str == "formant") return PhonemeCategory::Formant;
+    if (str == "subharmonic") return PhonemeCategory::Subharmonic;
+    if (str == "pulsed") return PhonemeCategory::Pulsed;
+    
+    // Default to vowel for unknown strings
+    std::cerr << "Warning: Unknown phoneme category string '" << str 
+              << "', defaulting to Vowel" << std::endl;
+    return PhonemeCategory::Vowel;
 }
 
 // ============================================================================
@@ -108,8 +112,9 @@ bool PhonemeDatabase::loadLanguage(const std::string& language_file) {
             // Add to IPA map
             ipa_map_[phoneme->ipa] = phoneme;
 
-            // Add to category map
-            category_map_[phoneme->category].push_back(phoneme);
+            // Add to category map - CONVERT ENUM TO STRING
+            std::string category_str = phonemeCategoryToString(phoneme->category);
+            category_map_[category_str].push_back(phoneme);
 
             loaded_count++;
         } else {
@@ -226,8 +231,10 @@ bool PhonemeDatabase::parsePhonemeObject(
         phoneme->ipa = phoneme_obj["ipa"].get<std::string>();
     }
 
+    // Parse category - CONVERT STRING TO ENUM
     if (phoneme_obj.contains("category") && phoneme_obj["category"].is_string()) {
-        phoneme->category = phoneme_obj["category"].get<std::string>();
+        std::string category_str = phoneme_obj["category"].get<std::string>();
+        phoneme->category = stringToPhonemeCategory(category_str);
     }
 
     // Parse nested objects
@@ -253,17 +260,33 @@ FormantData PhonemeDatabase::parseFormantData(const nlohmann::json& formants_obj
         return data;
     }
 
-    // Parse formant frequencies
-    if (formants_obj.contains("f1")) data.f1 = formants_obj["f1"].get<float>();
-    if (formants_obj.contains("f2")) data.f2 = formants_obj["f2"].get<float>();
-    if (formants_obj.contains("f3")) data.f3 = formants_obj["f3"].get<float>();
-    if (formants_obj.contains("f4")) data.f4 = formants_obj["f4"].get<float>();
+    // Parse formant frequencies - support both array and f1/f2/f3/f4 formats
+    if (formants_obj.contains("frequencies") && formants_obj["frequencies"].is_array()) {
+        auto freqs = formants_obj["frequencies"];
+        for (size_t i = 0; i < 4 && i < freqs.size(); ++i) {
+            data.frequencies[i] = freqs[i].get<float>();
+        }
+    } else {
+        // Support individual f1, f2, f3, f4 fields for backward compatibility
+        if (formants_obj.contains("f1")) data.frequencies[0] = formants_obj["f1"].get<float>();
+        if (formants_obj.contains("f2")) data.frequencies[1] = formants_obj["f2"].get<float>();
+        if (formants_obj.contains("f3")) data.frequencies[2] = formants_obj["f3"].get<float>();
+        if (formants_obj.contains("f4")) data.frequencies[3] = formants_obj["f4"].get<float>();
+    }
 
-    // Parse formant bandwidths
-    if (formants_obj.contains("bw1")) data.bw1 = formants_obj["bw1"].get<float>();
-    if (formants_obj.contains("bw2")) data.bw2 = formants_obj["bw2"].get<float>();
-    if (formants_obj.contains("bw3")) data.bw3 = formants_obj["bw3"].get<float>();
-    if (formants_obj.contains("bw4")) data.bw4 = formants_obj["bw4"].get<float>();
+    // Parse formant bandwidths - support both array and bw1/bw2/bw3/bw4 formats
+    if (formants_obj.contains("bandwidths") && formants_obj["bandwidths"].is_array()) {
+        auto bws = formants_obj["bandwidths"];
+        for (size_t i = 0; i < 4 && i < bws.size(); ++i) {
+            data.bandwidths[i] = bws[i].get<float>();
+        }
+    } else {
+        // Support individual bw1, bw2, bw3, bw4 fields for backward compatibility
+        if (formants_obj.contains("bw1")) data.bandwidths[0] = formants_obj["bw1"].get<float>();
+        if (formants_obj.contains("bw2")) data.bandwidths[1] = formants_obj["bw2"].get<float>();
+        if (formants_obj.contains("bw3")) data.bandwidths[2] = formants_obj["bw3"].get<float>();
+        if (formants_obj.contains("bw4")) data.bandwidths[3] = formants_obj["bw4"].get<float>();
+    }
 
     return data;
 }
@@ -301,11 +324,11 @@ TemporalFeatures PhonemeDatabase::parseTemporalFeatures(
     }
 
     if (temporal_obj.contains("min_duration"))
-        features.min_duration = temporal_obj["min_duration"].get<float>();
+        features.min_duration = temporal_obj["min_duration"].get<int>();
     if (temporal_obj.contains("max_duration"))
-        features.max_duration = temporal_obj["max_duration"].get<float>();
+        features.max_duration = temporal_obj["max_duration"].get<int>();
     if (temporal_obj.contains("default_duration"))
-        features.default_duration = temporal_obj["default_duration"].get<float>();
+        features.default_duration = temporal_obj["default_duration"].get<int>();
 
     return features;
 }
@@ -325,15 +348,10 @@ FormantData PhonemeDatabase::lerpFormants(
 ) const {
     FormantData result;
 
-    result.f1 = lerp(a.f1, b.f1, t);
-    result.f2 = lerp(a.f2, b.f2, t);
-    result.f3 = lerp(a.f3, b.f3, t);
-    result.f4 = lerp(a.f4, b.f4, t);
-
-    result.bw1 = lerp(a.bw1, b.bw1, t);
-    result.bw2 = lerp(a.bw2, b.bw2, t);
-    result.bw3 = lerp(a.bw3, b.bw3, t);
-    result.bw4 = lerp(a.bw4, b.bw4, t);
+    for (size_t i = 0; i < 4; ++i) {
+        result.frequencies[i] = lerp(a.frequencies[i], b.frequencies[i], t);
+        result.bandwidths[i] = lerp(a.bandwidths[i], b.bandwidths[i], t);
+    }
 
     return result;
 }

@@ -47,7 +47,7 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
 
-    const juce::String getName() const override { return JUCE_APPLICATION_NAME_STRING; }
+    const juce::String getName() const override { return "Choir V2.0"; }
 
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return false; }
@@ -58,9 +58,9 @@ public:
     // Program support
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }
-    void setCurrentProgram(int index) override {}
-    const juce::String getProgramName(int index) override { return {}; }
-    void changeProgramName(int index, const juce::String& newName) override {}
+    void setCurrentProgram([[maybe_unused]] int index) override {}
+    const juce::String getProgramName([[maybe_unused]] int index) override { return {}; }
+    void changeProgramName([[maybe_unused]] int index, [[maybe_unused]] const juce::String& newName) override {}
 
     // State management
     void getStateInformation(juce::MemoryBlock& destData) override;
@@ -99,7 +99,7 @@ private:
 
     // JUCE parameter management
     juce::AudioProcessorValueTreeState parameters;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ParameterLayout> createParameterLayout();
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     // Parameter smoothing (LinearSmoother for real-time safety)
     struct SmoothedParams {

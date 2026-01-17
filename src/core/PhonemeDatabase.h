@@ -15,63 +15,15 @@
 #include <unordered_map>
 #include <mutex>
 #include <nlohmann/json.hpp>
+#include "Phoneme.h"
 
 namespace ChoirV2 {
 
 /**
- * @brief Articulatory features for phonemes
+ * @brief Conversion functions for PhonemeCategory enum
  */
-struct ArticulatoryFeatures {
-    bool is_nasal = false;     // Nasal consonant (m, n, ng)
-    bool is_rounded = false;   // Lip rounding (rounded vowels)
-    bool is_voiced = true;     // Voiced vs unvoiced
-    bool is_lateral = false;   // Lateral airflow (l)
-    bool is_rhotic = false;    // R-colored sounds (r, ER)
-};
-
-/**
- * @brief Temporal characteristics for phonemes
- */
-struct TemporalFeatures {
-    float min_duration = 50.0f;       // Minimum duration (ms)
-    float max_duration = 300.0f;      // Maximum duration (ms)
-    float default_duration = 100.0f;  // Default duration (ms)
-};
-
-/**
- * @brief Formant frequencies and bandwidths
- */
-struct FormantData {
-    float f1 = 500.0f;   // First formant frequency (Hz)
-    float f2 = 1500.0f;  // Second formant frequency (Hz)
-    float f3 = 2500.0f;  // Third formant frequency (Hz)
-    float f4 = 3500.0f;  // Fourth formant frequency (Hz)
-    float bw1 = 50.0f;   // First formant bandwidth (Hz)
-    float bw2 = 80.0f;   // Second formant bandwidth (Hz)
-    float bw3 = 120.0f;  // Third formant bandwidth (Hz)
-    float bw4 = 150.0f;  // Fourth formant bandwidth (Hz)
-};
-
-/**
- * @brief Phoneme representation with complete acoustic properties
- *
- * Stores the acoustic and articulatory characteristics of a single phoneme
- * including formants, duration, and transition parameters.
- */
-struct Phoneme {
-    std::string id;              // Unique identifier (e.g., "AA", "IY", "K")
-    std::string ipa;             // IPA symbol (e.g., "/ɑ/", "/i/", "/k/")
-    std::string category;        // vowel, consonant, diphthong, plosive, etc.
-
-    FormantData formants;           // Formant frequencies and bandwidths
-    ArticulatoryFeatures articulatory; // Articulatory features
-    TemporalFeatures temporal;      // Temporal characteristics
-
-    // Helper methods for formant access
-    float getFormantFrequency(int index) const;
-    float getFormantBandwidth(int index) const;
-    bool hasFormant(int index) const;
-};
+std::string phonemeCategoryToString(PhonemeCategory category);
+PhonemeCategory stringToPhonemeCategory(const std::string& str);
 
 /**
  * @brief Universal phoneme database with JSON loading

@@ -10,7 +10,7 @@
 #pragma once
 
 #include "ISynthesisMethod.h"
-#include "../core/Phoneme.h"
+#include "../core/PhonemeDatabase.h"
 #include "../core/Voice.h"
 #include <memory>
 #include <vector>

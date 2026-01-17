@@ -79,13 +79,10 @@ bool ChoirV2Engine::initialize()
     }
 
     // Create voice manager
-    voice_manager_ = std::make_shared<VoiceManager>(params_.num_voices);
+    voice_manager_ = std::make_shared<VoiceManager>(params_.num_voices, params_.sample_rate);
     if (!voice_manager_) {
         return false;
     }
-
-    // Set CPU limit for voice stealing
-    voice_manager_->setCPULimit(params_.cpu_limit);
 
     // Create default synthesis method (formant)
     synthesis_method_ = SynthesisMethodFactory::create(params_.synthesis_method);
@@ -108,6 +105,9 @@ bool ChoirV2Engine::initialize()
     if (!synthesis_method_->initialize(synth_params)) {
         return false;
     }
+
+    // Prepare voice manager for audio processing
+    voice_manager_->prepare(params_.sample_rate, params_.max_block_size);
 
     initialized_ = true;
     return true;
@@ -181,10 +181,7 @@ bool ChoirV2Engine::synthesize(
     }
 
     // Calculate duration from phoneme sequence
-    float total_duration = 0.0f;
-    for (float duration : g2p_result.durations) {
-        total_duration += duration;
-    }
+    float total_duration = g2p_result.getTotalDuration();
 
     // Calculate number of samples needed
     int samples_needed = static_cast<int>(total_duration * params_.sample_rate);
@@ -192,15 +189,15 @@ bool ChoirV2Engine::synthesize(
     // Clamp to requested size
     samples_needed = std::min(samples_needed, num_samples);
 
-    // Clear output buffer
-    std::fill(output, output + num_samples * 2, 0.0f); // Stereo
+    // Clear output buffer (stereo)
+    std::fill(output, output + num_samples * 2, 0.0f);
 
     // Synthesize each phoneme
     int sample_offset = 0;
-    for (size_t i = 0; i < g2p_result.phonemes.size(); ++i) {
-        const std::string& phoneme_symbol = g2p_result.phonemes[i];
-        float phoneme_duration = g2p_result.durations[i];
-        float phoneme_pitch = g2p_result.pitches.size() > i ? g2p_result.pitches[i] : 440.0f;
+    for (const auto& phoneme_result : g2p_result.phonemes) {
+        const std::string& phoneme_symbol = phoneme_result.symbol;
+        float phoneme_duration = phoneme_result.duration;
+        float phoneme_pitch = phoneme_result.pitch_target > 0.0f ? phoneme_result.pitch_target : 440.0f;
 
         // Get phoneme data
         auto phoneme = phoneme_db_->getPhoneme(phoneme_symbol);
@@ -208,26 +205,29 @@ bool ChoirV2Engine::synthesize(
             continue; // Skip unknown phonemes
         }
 
-        // Allocate a voice for this phoneme
-        auto allocation = voice_manager_->allocateVoice(
-            VoicePriority::Medium,
-            phoneme_pitch,
-            1.0f // Amplitude
-        );
+        // Convert frequency to MIDI note number
+        float midi_note = 69.0f + 12.0f * std::log2(phoneme_pitch / 440.0f);
+        int midi_note_int = static_cast<int>(std::round(midi_note));
+        midi_note_int = std::clamp(midi_note_int, 0, 127);
 
-        if (!allocation.success) {
+        // Allocate a voice for this phoneme using noteOn
+        int voice_id = voice_manager_->noteOn(midi_note_int, 100.0f);
+
+        if (voice_id < 0) {
             continue; // Skip if voice allocation failed
         }
 
         // Get the voice
-        Voice* voice = voice_manager_->getVoice(allocation.voice_id);
-        if (!voice) {
+        auto* voice_instance = voice_manager_->getVoice(voice_id);
+        if (!voice_instance) {
             continue;
         }
 
-        // Set phoneme
-        voice->current_phoneme = phoneme_symbol;
-        voice->duration = phoneme_duration;
+        // Create Voice wrapper for synthesis method
+        Voice voice;
+        voice.setFrequency(phoneme_pitch);
+        voice.setAmplitude(1.0f);
+        voice.setActive(true);
 
         // Calculate samples for this phoneme
         int phoneme_samples = static_cast<int>(phoneme_duration * params_.sample_rate);
@@ -235,7 +235,7 @@ bool ChoirV2Engine::synthesize(
 
         // Synthesize the phoneme
         auto synth_result = synthesis_method_->synthesizeVoice(
-            voice,
+            &voice,
             phoneme.get(),
             output + sample_offset * 2,
             phoneme_samples
@@ -243,7 +243,7 @@ bool ChoirV2Engine::synthesize(
 
         if (!synth_result.success) {
             // Release voice on failure
-            voice_manager_->releaseVoice(allocation.voice_id);
+            voice_manager_->noteOff(midi_note_int, 0.0f);
             continue;
         }
 
@@ -253,7 +253,7 @@ bool ChoirV2Engine::synthesize(
         sample_offset += phoneme_samples;
 
         // Release voice after phoneme completes
-        voice_manager_->releaseVoice(allocation.voice_id);
+        voice_manager_->noteOff(midi_note_int, 0.0f);
 
         if (sample_offset >= num_samples) {
             break;
@@ -288,14 +288,15 @@ bool ChoirV2Engine::synthesizeWithMelody(
         return false;
     }
 
-    // Clear output buffer
-    std::fill(output, output + num_samples * 2, 0.0f); // Stereo
+    // Clear output buffer (stereo)
+    std::fill(output, output + num_samples * 2, 0.0f);
 
     // Synthesize each phoneme with custom frequency
     int sample_offset = 0;
     for (size_t i = 0; i < g2p_result.phonemes.size(); ++i) {
-        const std::string& phoneme_symbol = g2p_result.phonemes[i];
-        float phoneme_duration = g2p_result.durations[i];
+        const auto& phoneme_result = g2p_result.phonemes[i];
+        const std::string& phoneme_symbol = phoneme_result.symbol;
+        float phoneme_duration = phoneme_result.duration;
         float phoneme_pitch = frequencies[i];
 
         // Get phoneme data
@@ -304,45 +305,49 @@ bool ChoirV2Engine::synthesizeWithMelody(
             continue;
         }
 
+        // Convert frequency to MIDI note number
+        float midi_note = 69.0f + 12.0f * std::log2(phoneme_pitch / 440.0f);
+        int midi_note_int = static_cast<int>(std::round(midi_note));
+        midi_note_int = std::clamp(midi_note_int, 0, 127);
+
         // Allocate a voice
-        auto allocation = voice_manager_->allocateVoice(
-            VoicePriority::Medium,
-            phoneme_pitch,
-            1.0f
-        );
+        int voice_id = voice_manager_->noteOn(midi_note_int, 100.0f);
 
-        if (!allocation.success) {
+        if (voice_id < 0) {
             continue;
         }
 
-        Voice* voice = voice_manager_->getVoice(allocation.voice_id);
-        if (!voice) {
+        auto* voice_instance = voice_manager_->getVoice(voice_id);
+        if (!voice_instance) {
             continue;
         }
 
-        voice->current_phoneme = phoneme_symbol;
-        voice->duration = phoneme_duration;
+        // Create Voice wrapper
+        Voice voice;
+        voice.setFrequency(phoneme_pitch);
+        voice.setAmplitude(1.0f);
+        voice.setActive(true);
 
         int phoneme_samples = static_cast<int>(phoneme_duration * params_.sample_rate);
         phoneme_samples = std::min(phoneme_samples, num_samples - sample_offset);
 
         // Synthesize
         auto synth_result = synthesis_method_->synthesizeVoice(
-            voice,
+            &voice,
             phoneme.get(),
             output + sample_offset * 2,
             phoneme_samples
         );
 
         if (!synth_result.success) {
-            voice_manager_->releaseVoice(allocation.voice_id);
+            voice_manager_->noteOff(midi_note_int, 0.0f);
             continue;
         }
 
         perf_stats_.cpu_usage = synth_result.cpu_usage;
         sample_offset += phoneme_samples;
 
-        voice_manager_->releaseVoice(allocation.voice_id);
+        voice_manager_->noteOff(midi_note_int, 0.0f);
 
         if (sample_offset >= num_samples) {
             break;
@@ -396,9 +401,9 @@ ChoirV2Engine::PerfStats ChoirV2Engine::getPerformanceStats() const
     if (voice_manager_) {
         stats.active_voices = voice_manager_->getActiveVoiceCount();
 
-        // Get voice stealing statistics
-        auto stealing_stats = voice_manager_->getStealingStats();
-        stats.stolen_voices = stealing_stats.total_stolen;
+        // Get voice stealing statistics from VoiceManagerStats
+        const auto& vm_stats = voice_manager_->getStats();
+        stats.stolen_voices = vm_stats.stolenVoices;
     }
 
     return stats;
@@ -421,38 +426,11 @@ bool ChoirV2Engine::allocateVoices()
 //==============================================================================
 // Process audio (internal)
 //==============================================================================
-void ChoirV2Engine::processAudio(float* output, int num_samples)
+void ChoirV2Engine::processAudio([[maybe_unused]] float* output, [[maybe_unused]] int num_samples)
 {
-    // Get active voices
-    auto active_voices = voice_manager_->getActiveVoices();
-
-    if (active_voices.empty()) {
-        // No active voices, output silence
-        std::fill(output, output + num_samples * 2, 0.0f);
-        return;
-    }
-
-    // Prepare phoneme array for SIMD processing
-    std::vector<const Phoneme*> phonemes;
-    for (auto* voice : active_voices) {
-        auto phoneme = phoneme_db_->getPhoneme(voice->current_phoneme);
-        phonemes.push_back(phoneme.get());
-    }
-
-    // Synthesize all voices using SIMD
-    auto result = synthesis_method_->synthesizeVoicesSIMD(
-        active_voices,
-        phonemes,
-        output,
-        num_samples
-    );
-
-    // Update CPU usage
-    perf_stats_.cpu_usage = result.cpu_usage;
-
-    // Update voice states
-    double delta_time = static_cast<double>(num_samples) / params_.sample_rate;
-    voice_manager_->updateStates(delta_time);
+    // Note: This method is not currently used in the main synthesis flow
+    // The synthesize() methods handle audio generation directly
+    // This is a placeholder for future real-time processing
 }
 
 //==============================================================================
@@ -464,8 +442,9 @@ void ChoirV2Engine::updatePerformanceStats()
     if (voice_manager_) {
         perf_stats_.active_voices = voice_manager_->getActiveVoiceCount();
 
-        auto stealing_stats = voice_manager_->getStealingStats();
-        perf_stats_.stolen_voices = stealing_stats.total_stolen;
+        const auto& vm_stats = voice_manager_->getStats();
+        perf_stats_.stolen_voices = vm_stats.stolenVoices;
+        perf_stats_.average_latency = vm_stats.averageCpuUsage;
     }
 
     // Update CPU usage from synthesis method

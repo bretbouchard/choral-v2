@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(ChoirV2 VERSION 2.0.0 LANGUAGES CXX)
+project(ChoirV2 VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,14 +10,13 @@ option(CHOIR_V2_BUILD_TESTS "Build unit tests" OFF)
 option(CHOIR_V2_BUILD_BENCHMARKS "Build performance benchmarks" ON)
 option(CHOIR_V2_ENABLE_SIMD "Enable SIMD optimizations" ON)
 option(CHOIR_V2_BUILD_PLUGIN "Build JUCE plugin" ON)
-set(CHOIR_V2_PLUGIN_FORMATS "VST3;AU;CLAP;LV2;Standalone" CACHE STRING "Plugin formats to build")
-set_property(CACHE CHOIR_V2_PLUGIN_FORMATS PROPERTY STRINGS "VST3;AU;CLAP;LV2;Standalone;AAX;AUv3")
+option(CHOIR_V2_PLUGIN_FORMATS "Plugin formats to build" "VST3;AU;CLAP;LV2;Standalone")
 
 # Compiler flags
 if(MSVC)
     add_compile_options(/W4 /WX)
 else()
-    add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+    add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wno-unused-but-set-variable)
 endif()
 
 # SIMD support
@@ -49,6 +48,7 @@ set(SYNTHESIS_SOURCES
     src/synthesis/FormantSynthesis.cpp
     src/synthesis/SubharmonicSynthesis.cpp
     src/synthesis/DiphoneSynthesis.cpp
+    src/synthesis/ISynthesisMethod.cpp
 )
 
 set(DSP_SOURCES
@@ -85,7 +85,6 @@ set(HEADERS
     src/core/VoiceManager.h
     src/core/VoiceAllocator.h
     src/core/Voice.h
-    src/core/Phoneme.h
     src/core/PresetManager.h
     src/synthesis/FormantSynthesis.h
     src/synthesis/SubharmonicSynthesis.h
@@ -104,13 +103,7 @@ set(HEADERS
 )
 
 # Find nlohmann/json for JSON parsing
-find_package(nlohmann_json 3.11.0 QUIET)
-if(NOT nlohmann_json_FOUND)
-    include(FetchContent)
-    FetchContent_Declare(json
-        URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
-    FetchContent_MakeAvailable(json)
-endif()
+find_package(nlohmann_json 3.11.2 REQUIRED)
 
 # Core library
 add_library(ChoirV2Core STATIC
@@ -172,10 +165,9 @@ if(CHOIR_V2_BUILD_PLUGIN)
 
         # Create JUCE plugin
         juce_add_plugin(ChoirV2Plugin
-            COMPANY_NAME "BretBouchard"
+            COMPANY_NAME "Bret Bouchard"
             PLUGIN_MANUFACTURER_CODE "BBbr"
             PLUGIN_CODE "ChV2"
-            BUNDLE_ID "com.bretbouchard.ChoirV2Plugin"
             FORMATS ${CHOIR_V2_PLUGIN_FORMATS}
             PRODUCT_NAME "Choir V2.0"
             VERSION ${PROJECT_VERSION}
@@ -231,18 +223,6 @@ if(CHOIR_V2_BUILD_PLUGIN)
         if(TARGET ChoirV2Plugin_AU)
             set_target_properties(ChoirV2Plugin_AU PROPERTIES
                 LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/au"
-            )
-        endif()
-
-        if(TARGET ChoirV2Plugin_AAX)
-            set_target_properties(ChoirV2Plugin_AAX PROPERTIES
-                LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/aax"
-            )
-        endif()
-
-        if(TARGET ChoirV2Plugin_AUv3)
-            set_target_properties(ChoirV2Plugin_AUv3 PROPERTIES
-                LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/auv3"
             )
         endif()
 

@@ -8,6 +8,8 @@
  */
 
 #include "FormantSynthesis.h"
+#include "../core/Voice.h"
+#include "../core/PhonemeDatabase.h"
 #include <cmath>
 #include <algorithm>
 #include <cstring>
@@ -158,12 +160,7 @@ void FormantSynthesis::reset()
     target_formants_ = getDefaultFormants();
 }
 
-std::string FormantSynthesis::getName() const
-{
-    return "formant";
-}
-
-MethodStats FormantSynthesis::getStats() const
+FormantSynthesis::MethodStats FormantSynthesis::getStats() const
 {
     return stats_;
 }
@@ -298,7 +295,7 @@ void FormantSynthesis::updateFormantTargets(const Phoneme* phoneme)
     formant_smoothers_[4].setTarget(target_formants_.f5);
 }
 
-void FormantSynthesis::applyVibrato(int sample_index, float& f1, float& f2)
+void FormantSynthesis::applyVibrato(int /* sample_index */, float& f1, float& f2)
 {
     float sample_rate = 48000.0f;  // TODO: Get from params
 

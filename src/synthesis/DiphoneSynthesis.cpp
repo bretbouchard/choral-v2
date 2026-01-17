@@ -8,11 +8,15 @@
  */
 
 #include "DiphoneSynthesis.h"
+#include "../core/Voice.h"
 #include <cmath>
 #include <algorithm>
 #include <cstring>
 
 namespace ChoirV2 {
+
+// Use fully qualified type for MethodStats
+using MethodStats = DiphoneSynthesis::MethodStats;
 
 //==============================================================================
 // DiphoneSynthesis Implementation
@@ -148,11 +152,6 @@ void DiphoneSynthesis::reset()
     }
 }
 
-std::string DiphoneSynthesis::getName() const
-{
-    return "diphone";
-}
-
 MethodStats DiphoneSynthesis::getStats() const
 {
     return stats_;
@@ -178,7 +177,7 @@ void DiphoneSynthesis::setCoarticulationEnabled(bool enabled)
     params_.enable_coarticulation = enabled;
 }
 
-void DiphoneSynthesis::startDiphoneTransition(Voice* voice, const Phoneme* target)
+void DiphoneSynthesis::startDiphoneTransition([[maybe_unused]] Voice* voice, [[maybe_unused]] const Phoneme* target)
 {
     // TODO: Implement voice tracking for diphone transitions
     // This requires a voice ID system to track which voice is transitioning
@@ -197,6 +196,8 @@ void DiphoneSynthesis::generateExcitation(
     float transition_pos
 )
 {
+    (void)transition_pos;  // Unused for now
+
     // Determine excitation type based on phoneme
     bool voiced = isVoiced(phoneme);
     bool fricative = isFricative(phoneme);
@@ -260,11 +261,11 @@ void DiphoneSynthesis::updateFormantTargets(
     FormantData interpolated;
     interpolateFormants(source->formants, target->formants, t, interpolated);
 
-    // Set smoother targets
-    formant_smoothers_[0].setTarget(interpolated.f1);
-    formant_smoothers_[1].setTarget(interpolated.f2);
-    formant_smoothers_[2].setTarget(interpolated.f3);
-    formant_smoothers_[3].setTarget(interpolated.f4);
+    // Set smoother targets (FormantData now uses arrays)
+    formant_smoothers_[0].setTarget(interpolated.frequencies[0]);
+    formant_smoothers_[1].setTarget(interpolated.frequencies[1]);
+    formant_smoothers_[2].setTarget(interpolated.frequencies[2]);
+    formant_smoothers_[3].setTarget(interpolated.frequencies[3]);
 }
 
 DiphoneType DiphoneSynthesis::determineDiphoneType(
@@ -275,8 +276,8 @@ DiphoneType DiphoneSynthesis::determineDiphoneType(
     // Simple heuristic based on phoneme category
     // In a full implementation, this would use the PhonemeDatabase
 
-    bool source_is_vowel = (source->category == "vowel");
-    bool target_is_vowel = (target->category == "vowel");
+    bool source_is_vowel = (source->category == PhonemeCategory::Vowel);
+    bool target_is_vowel = (target->category == PhonemeCategory::Vowel);
 
     if (source_is_vowel && target_is_vowel) {
         return DiphoneType::VV;
@@ -380,17 +381,17 @@ void DiphoneSynthesis::interpolateFormants(
     FormantData& result
 ) const
 {
-    // Linear interpolation of formant frequencies
-    result.f1 = crossfade(source.f1, target.f1, t, params_.crossfade_curve);
-    result.f2 = crossfade(source.f2, target.f2, t, params_.crossfade_curve);
-    result.f3 = crossfade(source.f3, target.f3, t, params_.crossfade_curve);
-    result.f4 = crossfade(source.f4, target.f4, t, params_.crossfade_curve);
+    // Linear interpolation of formant frequencies (FormantData now uses arrays)
+    result.frequencies[0] = crossfade(source.frequencies[0], target.frequencies[0], t, params_.crossfade_curve);
+    result.frequencies[1] = crossfade(source.frequencies[1], target.frequencies[1], t, params_.crossfade_curve);
+    result.frequencies[2] = crossfade(source.frequencies[2], target.frequencies[2], t, params_.crossfade_curve);
+    result.frequencies[3] = crossfade(source.frequencies[3], target.frequencies[3], t, params_.crossfade_curve);
 
-    // Interpolate bandwidths
-    result.bw1 = crossfade(source.bw1, target.bw1, t, params_.crossfade_curve);
-    result.bw2 = crossfade(source.bw2, target.bw2, t, params_.crossfade_curve);
-    result.bw3 = crossfade(source.bw3, target.bw3, t, params_.crossfade_curve);
-    result.bw4 = crossfade(source.bw4, target.bw4, t, params_.crossfade_curve);
+    // Interpolate bandwidths (FormantData now uses arrays)
+    result.bandwidths[0] = crossfade(source.bandwidths[0], target.bandwidths[0], t, params_.crossfade_curve);
+    result.bandwidths[1] = crossfade(source.bandwidths[1], target.bandwidths[1], t, params_.crossfade_curve);
+    result.bandwidths[2] = crossfade(source.bandwidths[2], target.bandwidths[2], t, params_.crossfade_curve);
+    result.bandwidths[3] = crossfade(source.bandwidths[3], target.bandwidths[3], t, params_.crossfade_curve);
 }
 
 float DiphoneSynthesis::crossfade(float a, float b, float t, float curve) const

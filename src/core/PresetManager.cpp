@@ -745,7 +745,7 @@ bool PresetManager::exportPreset(
     return savePreset(preset, file_path, options);
 }
 
-bool PresetManager::exportAllUserPresets(const std::string& zip_path) {
+bool PresetManager::exportAllUserPresets([[maybe_unused]] const std::string& zip_path) {
     // TODO: Implement zip archive creation
     // This requires a zip library like miniz or zlib
     return false;
@@ -866,7 +866,7 @@ std::vector<Preset> PresetManager::getRecentPresets(int max_count) const {
             recent.push_back(it->second);
         }
 
-        if (recent.size() >= max_count) {
+        if (recent.size() >= static_cast<size_t>(max_count)) {
             break;
         }
     }
@@ -889,9 +889,9 @@ void PresetManager::addToRecent(const Preset& preset) {
     }
 
     // Add to front
-    impl_->recent_presets.emplace_front(
-        preset.metadata.name,
-        std::chrono::system_clock::now()
+    impl_->recent_presets.insert(
+        impl_->recent_presets.begin(),
+        std::make_pair(preset.metadata.name, std::chrono::system_clock::now())
     );
 
     // Limit size

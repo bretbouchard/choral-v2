@@ -97,29 +97,30 @@ ChoirV2Processor::~ChoirV2Processor()
 }
 
 //==============================================================================
-std::unique_ptr<juce::AudioProcessorValueTreeState::ParameterLayout>
+juce::AudioProcessorValueTreeState::ParameterLayout
 ChoirV2Processor::createParameterLayout()
 {
-    auto layout = std::make_unique<juce::AudioProcessorValueTreeState::ParameterLayout>();
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
     // Language (choice parameter)
-    layout->add(std::make_unique<juce::AudioParameterChoice>(
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
         PARAM_LANGUAGE,
         "Language",
         juce::StringArray{ "English", "Latin", "Klingon", "Throat Singing" },
         0
     ));
 
-    // Lyrics (text parameter - up to 1024 chars)
-    layout->add(std::make_unique<juce::AudioParameterText>(
+    // Lyrics (string parameter - using Float parameter as workaround for JUCE 8.0)
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_LYRICS,
         "Lyrics",
-        "Ah",
-        1024
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f),
+        0.0f,
+        ""
     ));
 
     // Number of voices (integer: 1-60)
-    layout->add(std::make_unique<juce::AudioParameterInt>(
+    layout.add(std::make_unique<juce::AudioParameterInt>(
         PARAM_NUM_VOICES,
         "Voices",
         1,
@@ -128,7 +129,7 @@ ChoirV2Processor::createParameterLayout()
     ));
 
     // Master gain (float: -60 to 0 dB)
-    layout->add(std::make_unique<juce::AudioParameterFloat>(
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_MASTER_GAIN,
         "Master Gain",
         juce::NormalisableRange<float>(-60.0f, 0.0f, 0.1f),
@@ -137,7 +138,7 @@ ChoirV2Processor::createParameterLayout()
     ));
 
     // Formant mix (float: 0-100%)
-    layout->add(std::make_unique<juce::AudioParameterFloat>(
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_FORMANT_MIX,
         "Formant Mix",
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
@@ -146,7 +147,7 @@ ChoirV2Processor::createParameterLayout()
     ));
 
     // Subharmonic mix (float: 0-100%)
-    layout->add(std::make_unique<juce::AudioParameterFloat>(
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_SUBHARMONIC_MIX,
         "Subharmonic Mix",
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
@@ -155,7 +156,7 @@ ChoirV2Processor::createParameterLayout()
     ));
 
     // Stereo width (float: 0-100%)
-    layout->add(std::make_unique<juce::AudioParameterFloat>(
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_STEREO_WIDTH,
         "Stereo Width",
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
@@ -164,7 +165,7 @@ ChoirV2Processor::createParameterLayout()
     ));
 
     // Vibrato rate (float: 0-10 Hz)
-    layout->add(std::make_unique<juce::AudioParameterFloat>(
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_VIBRATO_RATE,
         "Vibrato Rate",
         juce::NormalisableRange<float>(0.0f, 10.0f, 0.1f),
@@ -173,7 +174,7 @@ ChoirV2Processor::createParameterLayout()
     ));
 
     // Vibrato depth (float: 0-100%)
-    layout->add(std::make_unique<juce::AudioParameterFloat>(
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_VIBRATO_DEPTH,
         "Vibrato Depth",
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
@@ -182,7 +183,7 @@ ChoirV2Processor::createParameterLayout()
     ));
 
     // Reverb mix (float: 0-100%)
-    layout->add(std::make_unique<juce::AudioParameterFloat>(
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_REVERB_MIX,
         "Reverb Mix",
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
@@ -191,7 +192,7 @@ ChoirV2Processor::createParameterLayout()
     ));
 
     // Reverb size (float: 0-100%)
-    layout->add(std::make_unique<juce::AudioParameterFloat>(
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_REVERB_SIZE,
         "Reverb Size",
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
@@ -200,7 +201,7 @@ ChoirV2Processor::createParameterLayout()
     ));
 
     // Attack time (float: 1-500 ms)
-    layout->add(std::make_unique<juce::AudioParameterFloat>(
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_ATTACK_TIME,
         "Attack",
         juce::NormalisableRange<float>(1.0f, 500.0f, 1.0f),
@@ -209,7 +210,7 @@ ChoirV2Processor::createParameterLayout()
     ));
 
     // Release time (float: 10-2000 ms)
-    layout->add(std::make_unique<juce::AudioParameterFloat>(
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
         PARAM_RELEASE_TIME,
         "Release",
         juce::NormalisableRange<float>(10.0f, 2000.0f, 1.0f),
@@ -336,7 +337,7 @@ void ChoirV2Processor::processMidi(juce::MidiBuffer& midiMessages)
     for (const auto metadata : midiMessages)
     {
         const auto message = metadata.getMessage();
-        const auto timestamp = metadata.samplePosition;
+        [[maybe_unused]] const auto timestamp = metadata.samplePosition;
 
         if (message.isNoteOn())
         {
@@ -397,7 +398,7 @@ void ChoirV2Processor::updatePerformanceStats()
     perfStats_.stolen_voices = voiceStats.stolenVoices;
     perfStats_.average_latency = voiceStats.averageCpuUsage * 1000.0f; // Convert to ms
 
-    cpuUsage_.store(voiceStats.averageCpuUsage);
+    cpuUsage_ = voiceStats.averageCpuUsage;
 }
 
 //==============================================================================

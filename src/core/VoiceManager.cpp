@@ -8,6 +8,9 @@
  */
 
 #include "VoiceManager.h"
+#include "../synthesis/FormantSynthesis.h"
+#include "../synthesis/SubharmonicSynthesis.h"
+#include "../dsp/LinearSmoother.h"
 #include <cassert>
 #include <cmath>
 #include <algorithm>
@@ -47,6 +50,25 @@ VoiceManager::VoiceManager(int maxVoices, double sampleRate)
     currentParams_ = std::make_unique<VoiceParameters>();
     targetParams_ = std::make_unique<VoiceParameters>();
 
+    // Create synthesis methods
+    formantSynthesis_ = std::make_unique<FormantSynthesis>();
+    subharmonicSynthesis_ = std::make_unique<SubharmonicSynthesis>();
+
+    // Create parameter smoothers
+    masterGainSmoother_ = std::make_unique<LinearSmoother>();
+    attackTimeSmoother_ = std::make_unique<LinearSmoother>();
+    releaseTimeSmoother_ = std::make_unique<LinearSmoother>();
+    vibratoRateSmoother_ = std::make_unique<LinearSmoother>();
+    vibratoDepthSmoother_ = std::make_unique<LinearSmoother>();
+
+    // Initialize smoothers with default time constants
+    float smoothingTime = 0.05f;  // 50ms smoothing
+    masterGainSmoother_->setTimeConstant(smoothingTime, static_cast<float>(sampleRate_));
+    attackTimeSmoother_->setTimeConstant(smoothingTime, static_cast<float>(sampleRate_));
+    releaseTimeSmoother_->setTimeConstant(smoothingTime, static_cast<float>(sampleRate_));
+    vibratoRateSmoother_->setTimeConstant(smoothingTime, static_cast<float>(sampleRate_));
+    vibratoDepthSmoother_->setTimeConstant(smoothingTime, static_cast<float>(sampleRate_));
+
     // Initialize statistics
     stats_.totalVoices = maxVoices_;
 }
@@ -61,8 +83,21 @@ void VoiceManager::prepare(double sampleRate, int maxBlockSize) {
     scratchBuffer_.resize(maxBlockSize);
     std::fill(scratchBuffer_.begin(), scratchBuffer_.end(), 0.0f);
 
-    // Update sample rate for allocator
-    // (VoiceAllocator doesn't need sample rate, but synthesis will)
+    // Initialize synthesis methods
+    SynthesisParams params;
+    params.sample_rate = static_cast<float>(sampleRate);
+    params.max_block_size = maxBlockSize;
+
+    formantSynthesis_->initialize(params);
+    subharmonicSynthesis_->initialize(params);
+
+    // Update smoothers with new sample rate
+    float smoothingTime = 0.05f;  // 50ms smoothing
+    masterGainSmoother_->setTimeConstant(smoothingTime, static_cast<float>(sampleRate));
+    attackTimeSmoother_->setTimeConstant(smoothingTime, static_cast<float>(sampleRate));
+    releaseTimeSmoother_->setTimeConstant(smoothingTime, static_cast<float>(sampleRate));
+    vibratoRateSmoother_->setTimeConstant(smoothingTime, static_cast<float>(sampleRate));
+    vibratoDepthSmoother_->setTimeConstant(smoothingTime, static_cast<float>(sampleRate));
 
     // Reset all voices
     for (auto& voice : voices_) {
@@ -90,7 +125,7 @@ void VoiceManager::processAudio(float* outputLeft, float* outputRight, int numSa
     std::memset(outputLeft, 0, sizeof(float) * numSamples);
     std::memset(outputRight, 0, sizeof(float) * numSamples);
 
-    // Update parameter smoothing
+    // Update parameter smoothing using LinearSmoother
     updateParameterSmoothing();
 
     // Build SIMD batches from active voices
@@ -102,8 +137,8 @@ void VoiceManager::processAudio(float* outputLeft, float* outputRight, int numSa
         processSIMDBatch(batches[i], outputLeft, outputRight, numSamples);
     }
 
-    // Apply master gain
-    float masterGain = currentParams_->masterGain;
+    // Apply master gain (using smoothed value)
+    float masterGain = masterGainSmoother_->getCurrent();
 
     #if defined(CHOIR_USE_SSE)
         // SIMD master gain application
@@ -220,31 +255,31 @@ void VoiceManager::allNotesOff() {
 void VoiceManager::setMasterGain(float gain) {
     // Clamp to valid range
     gain = std::max(0.0f, std::min(2.0f, gain));
-    targetParams_->masterGain = gain;
+    masterGainSmoother_->setTarget(gain);
 }
 
 void VoiceManager::setAttackTime(float attackTime) {
     // Clamp to valid range
     attackTime = std::max(0.001f, std::min(1.0f, attackTime));
-    targetParams_->attackTime = attackTime;
+    attackTimeSmoother_->setTarget(attackTime);
 }
 
 void VoiceManager::setReleaseTime(float releaseTime) {
     // Clamp to valid range
     releaseTime = std::max(0.001f, std::min(2.0f, releaseTime));
-    targetParams_->releaseTime = releaseTime;
+    releaseTimeSmoother_->setTarget(releaseTime);
 }
 
 void VoiceManager::setVibratoRate(float rate) {
     // Clamp to valid range
     rate = std::max(0.0f, std::min(20.0f, rate));
-    targetParams_->vibratoRate = rate;
+    vibratoRateSmoother_->setTarget(rate);
 }
 
 void VoiceManager::setVibratoDepth(float depth) {
     // Clamp to valid range
     depth = std::max(0.0f, std::min(1.0f, depth));
-    targetParams_->vibratoDepth = depth;
+    vibratoDepthSmoother_->setTarget(depth);
 }
 
 VoiceInstance* VoiceManager::getVoice(int voiceId) {
@@ -330,9 +365,31 @@ void VoiceManager::processVoice(VoiceInstance* voice,
         return;  // Buffer too small (shouldn't happen if prepare() was called)
     }
 
-    // Generate audio (placeholder: simple sine wave)
-    // TODO: Replace with FormantSynthesis/SubharmonicSynthesis
-    generateSineWave(voice, scratchBuffer_.data(), numSamples);
+    // Generate audio using FormantSynthesis
+    // Create temporary Voice object for synthesis
+    Voice tempVoice;
+    tempVoice.setFrequency(voice->frequency);
+    tempVoice.setAmplitude(voice->amplitude);
+    tempVoice.setPan(voice->pan);
+
+    // Create default phoneme (schwa vowel)
+    Phoneme defaultPhoneme;
+    defaultPhoneme.ipa = "ə";
+    defaultPhoneme.category = PhonemeCategory::Vowel;
+    defaultPhoneme.articulatory.is_voiced = true;
+
+    // Synthesize using FormantSynthesis (replaces placeholder sine wave)
+    auto result = formantSynthesis_->synthesizeVoice(
+        &tempVoice,
+        &defaultPhoneme,
+        scratchBuffer_.data(),
+        numSamples
+    );
+
+    if (!result.success) {
+        // Fallback to sine wave if synthesis fails
+        generateSineWave(voice, scratchBuffer_.data(), numSamples);
+    }
 
     // Calculate pan gains
     float leftGain, rightGain;
@@ -359,10 +416,107 @@ void VoiceManager::processSIMDBatch(const SIMDBatch& batch,
                                     float* outputLeft,
                                     float* outputRight,
                                     int numSamples) {
-    // Process each voice in batch
-    // TODO: Implement true SIMD processing across voices
-    // For now, process sequentially (placeholder for SIMD implementation)
+    // True SIMD processing across voices
+    #if defined(__AVX__) && defined(__x86_64__)
+        // AVX implementation: Process 8 voices in parallel
+        if (batch.count == 8) {
+            // Get all 8 voices
+            VoiceInstance* voices[8];
+            for (int i = 0; i < 8; ++i) {
+                voices[i] = getVoice(batch.voiceIds[i]);
+            }
 
+            // Check if all voices are active
+            bool allActive = true;
+            for (int i = 0; i < 8; ++i) {
+                if (!voices[i] || !voices[i]->active) {
+                    allActive = false;
+                    break;
+                }
+            }
+
+            if (allActive) {
+                // AVX SIMD processing
+                for (int i = 0; i < numSamples; ++i) {
+                    // Load frequencies and phases
+                    __m256 freqs = _mm256_set_ps(
+                        voices[7]->frequency, voices[6]->frequency,
+                        voices[5]->frequency, voices[4]->frequency,
+                        voices[3]->frequency, voices[2]->frequency,
+                        voices[1]->frequency, voices[0]->frequency
+                    );
+
+                    __m256 phases = _mm256_set_ps(
+                        voices[7]->phase, voices[6]->phase,
+                        voices[5]->phase, voices[4]->phase,
+                        voices[3]->phase, voices[2]->phase,
+                        voices[1]->phase, voices[0]->phase
+                    );
+
+                    __m256 amplitudes = _mm256_set_ps(
+                        voices[7]->amplitude, voices[6]->amplitude,
+                        voices[5]->amplitude, voices[4]->amplitude,
+                        voices[3]->amplitude, voices[2]->amplitude,
+                        voices[1]->amplitude, voices[0]->amplitude
+                    );
+
+                    // Calculate phase increments
+                    __m256 sampleRateInv = _mm256_set1_ps(1.0f / static_cast<float>(sampleRate_));
+                    __m256 phaseIncs = _mm256_mul_ps(freqs, sampleRateInv);
+
+                    // Update phases
+                    phases = _mm256_add_ps(phases, phaseIncs);
+
+                    // Wrap phases (0 to 2*pi)
+                    __m256 twoPi = _mm256_set1_ps(2.0f * M_PI);
+                    __m256 mask = _mm256_cmp_ps(phases, twoPi, _CMP_GE_OQ);
+                    __m256 wrapped = _mm256_and_ps(mask, twoPi);
+                    phases = _mm256_sub_ps(phases, wrapped);
+
+                    // Generate sine waves using Taylor approximation (SIMD-compatible)
+                    // sin(x) ≈ x - x³/6 + x⁵/120
+                    __m256 samples = phases;
+                    __m256 x3 = _mm256_mul_ps(phases, _mm256_mul_ps(phases, phases));
+                    __m256 x5 = _mm256_mul_ps(x3, _mm256_mul_ps(phases, phases));
+                    samples = _mm256_sub_ps(samples, _mm256_mul_ps(x3, _mm256_set1_ps(1.0f/6.0f)));
+                    samples = _mm256_add_ps(samples, _mm256_mul_ps(x5, _mm256_set1_ps(1.0f/120.0f)));
+
+                    // Apply amplitudes
+                    samples = _mm256_mul_ps(samples, amplitudes);
+
+                    // Store back to voices and update phases
+                    float tempPhases[8];
+                    float tempSamples[8];
+                    _mm256_storeu_ps(tempPhases, phases);
+                    _mm256_storeu_ps(tempSamples, samples);
+
+                    // Mix to output with pan
+                    for (int j = 0; j < 8; ++j) {
+                        voices[j]->phase = tempPhases[j];
+
+                        float leftGain, rightGain;
+                        applyPan(1.0f, voices[j]->pan, leftGain, rightGain);
+
+                        float envelopeGain = voices[j]->attackGain * voices[j]->releaseGain;
+                        float sample = tempSamples[j] * envelopeGain;
+
+                        outputLeft[i] += sample * leftGain;
+                        outputRight[i] += sample * rightGain;
+                    }
+                }
+
+                // Update envelopes
+                for (int i = 0; i < 8; ++i) {
+                    updateEnvelope(voices[i], numSamples);
+                    voices[i]->age += static_cast<float>(numSamples) / static_cast<float>(sampleRate_);
+                }
+
+                return;  // Done with SIMD processing
+            }
+        }
+    #endif
+
+    // Fallback: Process each voice sequentially
     for (int i = 0; i < batch.count; ++i) {
         int voiceId = batch.voiceIds[i];
         VoiceInstance* voice = getVoice(voiceId);
@@ -371,23 +525,20 @@ void VoiceManager::processSIMDBatch(const SIMDBatch& batch,
             processVoice(voice, outputLeft, outputRight, numSamples);
         }
     }
-
-    // Future SIMD implementation:
-    // - Load 8 voice frequencies into __m256
-    // - Load 8 voice phases into __m256
-    // - Generate 8 samples in parallel
-    // - Store to 8 temporary buffers
-    // - Mix to output with weighted gains
 }
 
 void VoiceManager::updateEnvelope(VoiceInstance* voice, int numSamples) {
+    // Use deltaTime for accurate time-based envelope calculation
     float deltaTime = static_cast<float>(numSamples) / static_cast<float>(sampleRate_);
 
-    if (voice->inRelease) {
-        // Release envelope
-        float releaseTime = currentParams_->releaseTime;
-        float releaseCoeff = std::exp(-1.0f / (releaseTime * static_cast<float>(sampleRate_)));
+    // Get smoothed envelope parameters
+    float attackTime = attackTimeSmoother_->getCurrent();
+    float releaseTime = releaseTimeSmoother_->getCurrent();
 
+    if (voice->inRelease) {
+        // Release envelope: exponential decay
+        // coefficient = exp(-deltaTime / release_time)
+        float releaseCoeff = std::exp(-deltaTime / releaseTime);
         voice->releaseGain *= releaseCoeff;
 
         // Check if release is complete
@@ -397,10 +548,9 @@ void VoiceManager::updateEnvelope(VoiceInstance* voice, int numSamples) {
             allocator_->freeVoice(voice->id);
         }
     } else {
-        // Attack envelope
-        float attackTime = currentParams_->attackTime;
-        float attackCoeff = std::exp(-1.0f / (attackTime * static_cast<float>(sampleRate_)));
-
+        // Attack envelope: exponential attack
+        // coefficient = exp(-deltaTime / attack_time)
+        float attackCoeff = std::exp(-deltaTime / attackTime);
         voice->attackGain += (1.0f - voice->attackGain) * (1.0f - attackCoeff);
 
         // Clamp attack gain
@@ -421,16 +571,12 @@ void VoiceManager::applyPan(float input, float pan, float& leftGain, float& righ
 }
 
 void VoiceManager::updateParameterSmoothing() {
-    // Simple linear interpolation toward target
-    // TODO: Replace with LinearSmoother class
-
-    const float smoothingCoeff = 0.01f;  // Smoothing factor
-
-    currentParams_->masterGain += (targetParams_->masterGain - currentParams_->masterGain) * smoothingCoeff;
-    currentParams_->attackTime += (targetParams_->attackTime - currentParams_->attackTime) * smoothingCoeff;
-    currentParams_->releaseTime += (targetParams_->releaseTime - currentParams_->releaseTime) * smoothingCoeff;
-    currentParams_->vibratoRate += (targetParams_->vibratoRate - currentParams_->vibratoRate) * smoothingCoeff;
-    currentParams_->vibratoDepth += (targetParams_->vibratoDepth - currentParams_->vibratoDepth) * smoothingCoeff;
+    // Update all parameter smoothers (one sample step)
+    masterGainSmoother_->process();
+    attackTimeSmoother_->process();
+    releaseTimeSmoother_->process();
+    vibratoRateSmoother_->process();
+    vibratoDepthSmoother_->process();
 }
 
 int VoiceManager::findVoiceByNote(int midiNote) {

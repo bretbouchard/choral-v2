@@ -151,7 +151,7 @@ struct ReverbEffect::ReverbEngine {
         damping_2 = 1.0f - damp;
     }
 
-    float processCombFilter(int filter_idx, float input, int channel) {
+    float processCombFilter(int filter_idx, float input, [[maybe_unused]] int channel) {
         auto& buffer = comb_buffers_[filter_idx];
         int& index = comb_indices_[filter_idx];
         int size = static_cast<int>(buffer.size());

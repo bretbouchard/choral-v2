@@ -69,32 +69,32 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> reverbSizeAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attackTimeAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> releaseTimeAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::TextAttachment> lyricsAttachment;
+    // TextAttachment removed in JUCE 8.0 - lyrics will be handled manually
 
     // UI Components - Language Section
-    juce::GroupBox languageGroup;
+    juce::GroupComponent languageGroup;
     juce::Label languageLabel;
     juce::ComboBox languageComboBox;
 
     // UI Components - Lyrics Section
-    juce::GroupBox lyricsGroup;
+    juce::GroupComponent lyricsGroup;
     juce::Label lyricsLabel;
     juce::TextEditor lyricsEditor;
 
     // UI Components - Voice Configuration
-    juce::GroupBox voiceConfigGroup;
+    juce::GroupComponent voiceConfigGroup;
     juce::Label numVoicesLabel;
     juce::Slider numVoicesSlider;
     juce::Label numVoicesValueLabel;
 
     // UI Components - Master Section
-    juce::GroupBox masterGroup;
+    juce::GroupComponent masterGroup;
     juce::Label masterGainLabel;
     juce::Slider masterGainKnob;
     juce::Label masterGainValueLabel;
 
     // UI Components - Synthesis Mix
-    juce::GroupBox synthesisMixGroup;
+    juce::GroupComponent synthesisMixGroup;
     juce::Label formantMixLabel;
     juce::Slider formantMixSlider;
     juce::Label formantMixValueLabel;
@@ -106,7 +106,7 @@ private:
     juce::Label stereoWidthValueLabel;
 
     // UI Components - Vibrato Section
-    juce::GroupBox vibratoGroup;
+    juce::GroupComponent vibratoGroup;
     juce::Label vibratoRateLabel;
     juce::Slider vibratoRateSlider;
     juce::Label vibratoRateValueLabel;
@@ -115,7 +115,7 @@ private:
     juce::Label vibratoDepthValueLabel;
 
     // UI Components - Reverb Section
-    juce::GroupBox reverbGroup;
+    juce::GroupComponent reverbGroup;
     juce::Label reverbMixLabel;
     juce::Slider reverbMixSlider;
     juce::Label reverbMixValueLabel;
@@ -124,7 +124,7 @@ private:
     juce::Label reverbSizeValueLabel;
 
     // UI Components - Envelope Section
-    juce::GroupBox envelopeGroup;
+    juce::GroupComponent envelopeGroup;
     juce::Label attackTimeLabel;
     juce::Slider attackTimeSlider;
     juce::Label attackTimeValueLabel;
@@ -133,7 +133,7 @@ private:
     juce::Label releaseTimeValueLabel;
 
     // UI Components - Performance Monitor
-    juce::GroupBox performanceGroup;
+    juce::GroupComponent performanceGroup;
     juce::Label activeVoicesLabel;
     juce::Label activeVoicesValueLabel;
     juce::Label cpuUsageLabel;
@@ -147,6 +147,9 @@ private:
 
     // Timer callback for performance updates
     void timerCallback() override;
+
+    // AudioProcessorValueTreeState::Listener callback
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
 
     // JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ChoirV2Editor)
 };

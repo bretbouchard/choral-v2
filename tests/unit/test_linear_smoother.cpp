@@ -171,7 +171,7 @@ void testLinearSmootherClickPrevention() {
     float prev_value = first_sample;
     for (int i = 0; i < 100; ++i) {
         float value = smoother.process();
-        float delta = std::abs(value - prev_value);
+        [[maybe_unused]] float delta = std::abs(value - prev_value);
 
         // Maximum step size should be small (prevents clicks)
         assert(delta < 0.01f && "No sudden jumps (click prevention)");
@@ -204,8 +204,8 @@ void testLinearSmootherProcessBlock() {
     smoother2.setTarget(1.0f);
 
     for (int i = 0; i < block_size; ++i) {
-        float expected = smoother2.process();
-        float actual = output[i];
+        [[maybe_unused]] float expected = smoother2.process();
+        [[maybe_unused]] float actual = output[i];
 
         assert(std::abs(expected - actual) < 0.0001f && "Block matches individual processing");
     }

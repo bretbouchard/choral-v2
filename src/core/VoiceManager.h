@@ -14,6 +14,8 @@
 #include <atomic>
 #include <cstring>
 #include "VoiceAllocator.h"
+#include "Voice.h"
+#include "Phoneme.h"
 
 namespace ChoirV2 {
 
@@ -343,13 +345,24 @@ private:
     // Pre-allocated scratch buffer for voice processing (real-time safe)
     std::vector<float> scratchBuffer_;
 
-    // Parameter smoothing (placeholders for future LinearSmoother integration)
-    std::unique_ptr<VoiceParameters> currentParams_;
-    std::unique_ptr<VoiceParameters> targetParams_;
+    // Synthesis methods
+    std::unique_ptr<FormantSynthesis> formantSynthesis_;
+    std::unique_ptr<SubharmonicSynthesis> subharmonicSynthesis_;
+
+    // Parameter smoothing (using LinearSmoother)
+    std::unique_ptr<LinearSmoother> masterGainSmoother_;
+    std::unique_ptr<LinearSmoother> attackTimeSmoother_;
+    std::unique_ptr<LinearSmoother> releaseTimeSmoother_;
+    std::unique_ptr<LinearSmoother> vibratoRateSmoother_;
+    std::unique_ptr<LinearSmoother> vibratoDepthSmoother_;
 
     // Statistics
     VoiceManagerStats stats_;
     std::atomic<float> peakCpuUsage_;
+
+    // Target parameters (for smoothing)
+    std::unique_ptr<VoiceParameters> targetParams_;
+    std::unique_ptr<VoiceParameters> currentParams_;
 
     // SIMD batch processing
     /**

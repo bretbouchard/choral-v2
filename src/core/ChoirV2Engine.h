@@ -125,6 +125,11 @@ public:
     };
     PerfStats getPerformanceStats() const;
 
+    /**
+     * @brief Shutdown the engine and release resources
+     */
+    void shutdown();
+
 private:
     ChoirV2Params params_;
 

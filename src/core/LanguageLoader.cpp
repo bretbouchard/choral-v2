@@ -275,23 +275,41 @@ void LanguageLoader::parsePhoneme(
         phoneme.ipa = phoneme_data["ipa"].get<std::string>();
     }
 
-    // Extract category
+
+    // Extract category - CONVERT STRING TO ENUM
     if (phoneme_data.contains("category")) {
-        phoneme.category = phoneme_data["category"].get<std::string>();
+        std::string category_str = phoneme_data["category"].get<std::string>();
+        phoneme.category = stringToPhonemeCategory(category_str);
     }
 
     // Extract formants
     if (phoneme_data.contains("formants")) {
         auto formants = phoneme_data["formants"];
         if (formants.is_object()) {
-            phoneme.formants.f1 = formants.value("f1", 500.0f);
-            phoneme.formants.f2 = formants.value("f2", 1500.0f);
-            phoneme.formants.f3 = formants.value("f3", 2500.0f);
-            phoneme.formants.f4 = formants.value("f4", 3500.0f);
-            phoneme.formants.bw1 = formants.value("bw1", 50.0f);
-            phoneme.formants.bw2 = formants.value("bw2", 80.0f);
-            phoneme.formants.bw3 = formants.value("bw3", 120.0f);
-            phoneme.formants.bw4 = formants.value("bw4", 150.0f);
+            // Support both array and individual field formats
+            if (formants.contains("frequencies") && formants["frequencies"].is_array()) {
+                auto freqs = formants["frequencies"];
+                for (size_t i = 0; i < 4 && i < freqs.size(); ++i) {
+                    phoneme.formants.frequencies[i] = freqs[i].get<float>();
+                }
+            } else {
+                phoneme.formants.frequencies[0] = formants.value("f1", 500.0f);
+                phoneme.formants.frequencies[1] = formants.value("f2", 1500.0f);
+                phoneme.formants.frequencies[2] = formants.value("f3", 2500.0f);
+                phoneme.formants.frequencies[3] = formants.value("f4", 3500.0f);
+            }
+            
+            if (formants.contains("bandwidths") && formants["bandwidths"].is_array()) {
+                auto bws = formants["bandwidths"];
+                for (size_t i = 0; i < 4 && i < bws.size(); ++i) {
+                    phoneme.formants.bandwidths[i] = bws[i].get<float>();
+                }
+            } else {
+                phoneme.formants.bandwidths[0] = formants.value("bw1", 50.0f);
+                phoneme.formants.bandwidths[1] = formants.value("bw2", 80.0f);
+                phoneme.formants.bandwidths[2] = formants.value("bw3", 120.0f);
+                phoneme.formants.bandwidths[3] = formants.value("bw4", 150.0f);
+            }
         }
     }
 
@@ -311,9 +329,9 @@ void LanguageLoader::parsePhoneme(
     if (phoneme_data.contains("temporal")) {
         auto temporal = phoneme_data["temporal"];
         if (temporal.is_object()) {
-            phoneme.temporal.min_duration = temporal.value("min_duration", 50.0f);
-            phoneme.temporal.max_duration = temporal.value("max_duration", 300.0f);
-            phoneme.temporal.default_duration = temporal.value("default_duration", 100.0f);
+            phoneme.temporal.min_duration = temporal.value("min_duration", 50);
+            phoneme.temporal.max_duration = temporal.value("max_duration", 500);
+            phoneme.temporal.default_duration = temporal.value("default_duration", 200);
         }
     }
 

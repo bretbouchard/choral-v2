@@ -9,11 +9,9 @@
 
 #include "ChoirV2Editor.h"
 
-namespace ChoirV2 {
-
 //==============================================================================
-ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
-    : AudioProcessorEditor(&p)
+ChoirV2::ChoirV2Editor::ChoirV2Editor(ChoirV2::ChoirV2Processor& p)
+    : juce::AudioProcessorEditor(&p)
     , processorRef(p)
     , parameters(processorRef.getAPVTS())
 {
@@ -24,22 +22,22 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     setSize(800, 900);
 
     // Start timer for performance updates (30 FPS)
-    startTimerHz(30);
+    juce::Timer::startTimerHz(30);
 }
 
-ChoirV2Editor::~ChoirV2Editor()
+ChoirV2::ChoirV2Editor::~ChoirV2Editor()
 {
-    stopTimer();
+    juce::Timer::stopTimer();
 }
 
 //==============================================================================
-void ChoirV2Editor::setupLookAndFeel()
+void ChoirV2::ChoirV2Editor::setupLookAndFeel()
 {
     // Custom look and feel can be added here
     // For now, using default JUCE look and feel
 }
 
-void ChoirV2Editor::setupUI()
+void ChoirV2::ChoirV2Editor::setupUI()
 {
     // Language Section
     addAndMakeVisible(languageGroup);
@@ -227,7 +225,7 @@ void ChoirV2Editor::setupUI()
 
     addAndMakeVisible(activeVoicesValueLabel);
     activeVoicesValueLabel.setText("0 / 60", juce::dontSendNotification);
-    activeVoicesValueLabel.setFont(juce::Font(14.0f, juce::Font::bold));
+    activeVoicesValueLabel.setFont(juce::FontOptions{ 14.0f }.withStyle("Bold"));
     activeVoicesValueLabel.setColour(juce::Label::textColourId, juce::Colours::green);
 
     addAndMakeVisible(cpuUsageLabel);
@@ -235,7 +233,7 @@ void ChoirV2Editor::setupUI()
 
     addAndMakeVisible(cpuUsageValueLabel);
     cpuUsageValueLabel.setText("0%", juce::dontSendNotification);
-    cpuUsageValueLabel.setFont(juce::Font(14.0f, juce::Font::bold));
+    cpuUsageValueLabel.setFont(juce::FontOptions{ 14.0f }.withStyle("Bold"));
 
     addAndMakeVisible(cpuUsageBar);
     cpuUsageBar.setText("", juce::dontSendNotification);
@@ -278,8 +276,14 @@ void ChoirV2Editor::setupUI()
     releaseTimeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         parameters, ChoirV2Processor::PARAM_RELEASE_TIME, releaseTimeSlider);
 
-    lyricsAttachment = std::make_unique<juce::AudioProcessorValueTreeState::TextAttachment>(
-        parameters, ChoirV2Processor::PARAM_LYRICS, lyricsEditor);
+    // Note: TextAttachment removed in JUCE 8.0 - lyrics editor will be handled manually
+    // Add listener for text editor changes instead
+    lyricsEditor.onReturnKey = [this]() {
+        // Update processor with new lyrics
+        if (auto* param = parameters.getParameter(ChoirV2Processor::PARAM_LYRICS)) {
+            param->setValueNotifyingHost(lyricsEditor.getText().getFloatValue());
+        }
+    };
 
     // Add slider value change listeners
     numVoicesSlider.onValueChange = [this]() {
@@ -339,7 +343,7 @@ void ChoirV2Editor::setupUI()
 }
 
 //==============================================================================
-void ChoirV2Editor::paint(juce::Graphics& g)
+void ChoirV2::ChoirV2Editor::paint(juce::Graphics& g)
 {
     // Background
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
@@ -350,7 +354,7 @@ void ChoirV2Editor::paint(juce::Graphics& g)
     g.drawText("Choir V2.0", getLocalBounds().removeFromTop(40), juce::Justification::centred);
 }
 
-void ChoirV2Editor::resized()
+void ChoirV2::ChoirV2Editor::resized()
 {
     auto area = getLocalBounds().reduced(10);
     area.removeFromTop(50); // Space for title
@@ -485,12 +489,12 @@ void ChoirV2Editor::resized()
 }
 
 //==============================================================================
-void ChoirV2Editor::timerCallback()
+void ChoirV2::ChoirV2Editor::timerCallback()
 {
     updatePerformanceDisplay();
 }
 
-void ChoirV2Editor::updatePerformanceDisplay()
+void ChoirV2::ChoirV2Editor::updatePerformanceDisplay()
 {
     const auto& perfStats = processorRef.getPerformanceStats();
 
@@ -520,4 +524,13 @@ void ChoirV2Editor::updatePerformanceDisplay()
 }
 
 //==============================================================================
-} // namespace ChoirV2
+void ChoirV2::ChoirV2Editor::parameterChanged(const juce::String& parameterID, float newValue)
+{
+    // Handle parameter changes if needed
+    // Most parameters are handled by attachments, but this can be used for custom behavior
+    juce::ignoreUnused(parameterID, newValue);
+}
+
+//==============================================================================
+// ChoirV2Editor Implementation End
+//==============================================================================
