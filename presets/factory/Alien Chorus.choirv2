@@ -1,0 +1,40 @@
+{
+  "format": "choir-v2-preset",
+  "version": "2.0.0",
+  "metadata": {
+    "name": "Alien Chorus",
+    "author": "White Room",
+    "description": "Aggressive 20-voice Klingon chorus with harsh formants and subharmonic grit",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": ["alien", "klingon", "aggressive", "sci-fi", "harsh", "experimental"],
+    "createdDate": "2026-01-17T00:00:00Z",
+    "modifiedDate": "2026-01-17T00:00:00Z",
+    "pluginVersion": "2.0.0"
+  },
+  "parameters": {
+    "language": "klingon",
+    "lyrics": "ghop ta' tlhingan",
+    "numVoices": 20,
+    "masterGain": -4.0,
+    "synthesisMethod": "subharmonic",
+    "formantMix": 40.0,
+    "subharmonicMix": 60.0,
+    "stereoWidth": 85.0,
+    "vibratoRate": 8.0,
+    "vibratoDepth": 45.0,
+    "reverbMix": 15.0,
+    "reverbSize": 30.0,
+    "attackTime": 20.0,
+    "releaseTime": 150.0,
+    "enableAntiAliasing": true,
+    "enableSpectralEnhancement": false,
+    "oversamplingFactor": 1.0,
+    "pitchVariation": 25.0,
+    "timingVariation": 10.0,
+    "formantVariation": 30.0,
+    "breathiness": 15.0,
+    "warmth": 10.0,
+    "brightness": 80.0
+  }
+}

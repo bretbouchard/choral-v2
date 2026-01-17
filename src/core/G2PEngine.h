@@ -12,24 +12,82 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
+#include <regex>
 
 namespace ChoirV2 {
 
 // Forward declarations
 class PhonemeDatabase;
-class LanguageDefinition;
+struct LanguageDefinition;
 
 /**
- * @brief Grapheme-to-Phoneme result
+ * @brief G2P rule with context sensitivity
  *
- * Represents the conversion of text to phoneme sequence.
+ * Represents a single grapheme-to-phoneme conversion rule
+ * with optional context constraints.
+ */
+struct G2PRule {
+    std::string pattern;              // Grapheme pattern (regex or literal)
+    std::vector<std::string> phonemes; // Replacement phonemes
+    std::string context;              // Context description
+    int priority;                     // Rule priority (higher = more specific)
+
+    // Context constraints
+    std::string preceding;            // Required preceding characters
+    std::string following;            // Required following characters
+    bool word_start;                  // Must be at word start
+    bool word_end;                    // Must be at word end
+
+    // Character class constraints
+    std::string char_class;           // vowel, consonant, etc.
+};
+
+/**
+ * @brief Phoneme with timing and metadata
+ *
+ * Represents a single phoneme in the output sequence with
+ * associated timing and prosodic information.
+ */
+struct PhonemeResult {
+    std::string symbol;               // IPA or phoneme symbol
+    float duration;                   // Duration in seconds
+    float pitch_target;               // F0 target (Hz)
+    bool stressed;                    // Is this syllable stressed?
+    size_t position;                  // Position in word
+    size_t syllable;                  // Syllable index (0-based)
+};
+
+/**
+ * @brief Grapheme-to-Phoneme conversion result
+ *
+ * Complete result of text-to-phoneme conversion including
+ * phoneme sequence, timing, and metadata.
  */
 struct G2PResult {
-    std::vector<std::string> phonemes;  // Phoneme sequence (IPA symbols)
-    std::vector<float> durations;       // Duration for each phoneme
-    std::vector<float> pitches;         // Pitch targets for each phoneme
-    bool success;                       // Conversion successful?
-    std::string error_message;          // Error details if failed
+    std::vector<PhonemeResult> phonemes;  // Phoneme sequence with metadata
+    std::vector<std::string> words;       // Original word tokens
+    bool success;                         // Conversion successful?
+    std::string error_message;            // Error details if failed
+
+    // Convenience methods
+    size_t getPhonemeCount() const { return phonemes.size(); }
+    float getTotalDuration() const;
+    std::string getPhonemeString() const;
+};
+
+/**
+ * @brief Word token with metadata
+ *
+ * Represents a single word tokenized from input text
+ * with position and context information.
+ */
+struct WordToken {
+    std::string text;               // Word text
+    size_t start_pos;              // Start position in original text
+    size_t end_pos;                // End position in original text
+    bool punctuation;              // Is this punctuation?
+    bool whitespace;               // Is this whitespace?
 };
 
 /**
@@ -37,13 +95,30 @@ struct G2PResult {
  *
  * Converts text (graphemes) to phoneme sequences using language-specific rules.
  * Supports multiple G2P methods:
- * - Rule-based (dictionary + letter-to-sound rules)
- * - Statistical (n-gram models)
- * - Neural (external models, optional)
+ * - Dictionary lookup (for common words)
+ * - Rule-based conversion (letter-to-sound rules)
+ * - Context-sensitive rules (prefix, suffix, character class)
+ * - Exception handling (special case mappings)
+ *
+ * Algorithm:
+ * 1. Tokenize input text into words
+ * 2. Apply dictionary lookup (if available)
+ * 3. Apply G2P rules left-to-right (longest match first)
+ * 4. Handle context-sensitive rules
+ * 5. Apply exceptions and special cases
+ * 6. Generate timing and prosody estimates
  */
 class G2PEngine {
 public:
-    G2PEngine(std::shared_ptr<PhonemeDatabase> db);
+    /**
+     * @brief Constructor
+     * @param db Phoneme database for validation
+     */
+    explicit G2PEngine(std::shared_ptr<PhonemeDatabase> db);
+
+    /**
+     * @brief Destructor
+     */
     ~G2PEngine();
 
     /**
@@ -55,7 +130,7 @@ public:
     /**
      * @brief Convert text to phonemes
      * @param text Input text (graphemes)
-     * @return G2P result with phoneme sequence
+     * @return G2P result with phoneme sequence and timing
      */
     G2PResult convert(const std::string& text);
 
@@ -71,25 +146,91 @@ public:
     );
 
     /**
-     * @brief Add a custom pronunciation rule
-     * @param grapheme Text pattern
-     * @param phonemes Phoneme substitution
+     * @brief Add a custom G2P rule
+     * @param rule G2P rule to add
      */
-    addRule(const std::string& grapheme, const std::vector<std::string>& phonemes);
+    void addRule(const G2PRule& rule);
+
+    /**
+     * @brief Add a dictionary entry
+     * @param word Word text
+     * @param phonemes Phoneme sequence
+     */
+    void addDictionaryEntry(
+        const std::string& word,
+        const std::vector<std::string>& phonemes
+    );
+
+    /**
+     * @brief Clear all custom rules and dictionary entries
+     */
+    void clearCustomRules();
+
+    /**
+     * @brief Get statistics about last conversion
+     */
+    struct ConversionStats {
+        size_t dictionary_hits;      // Words found in dictionary
+        size_t rule_matches;         // Rules applied
+        size_t exceptions_handled;   // Special cases processed
+        float processing_time_ms;    // Processing time in milliseconds
+    };
+
+    ConversionStats getLastStats() const { return last_stats_; }
 
 private:
     std::shared_ptr<PhonemeDatabase> phoneme_db_;
     std::shared_ptr<LanguageDefinition> current_language_;
 
-    // G2P rules (grapheme -> phoneme mapping)
-    std::unordered_map<std::string, std::vector<std::string>> rules_;
+    // G2P rules (loaded from language definition)
+    std::vector<G2PRule> rules_;
 
     // Dictionary for common words
     std::unordered_map<std::string, std::vector<std::string>> dictionary_;
 
+    // Custom rules (user-added, higher priority)
+    std::vector<G2PRule> custom_rules_;
+
+    // Custom dictionary entries
+    std::unordered_map<std::string, std::vector<std::string>> custom_dictionary_;
+
+    // Statistics
+    ConversionStats last_stats_;
+
+    // Conversion methods
     G2PResult applyRules(const std::string& text);
     G2PResult lookupDictionary(const std::string& word);
-    std::vector<std::string> tokenize(const std::string& text);
+    std::vector<WordToken> tokenize(const std::string& text);
+
+    // Rule application
+    std::vector<PhonemeResult> applyRulesToWord(
+        const std::string& word,
+        size_t word_position
+    );
+
+    bool matchesContext(
+        const G2PRule& rule,
+        const std::string& word,
+        size_t match_pos
+    );
+
+    // Timing and prosody
+    std::vector<PhonemeResult> addTimingAndProsody(
+        const std::vector<std::string>& phonemes,
+        float speech_rate
+    );
+
+    float estimatePhonemeDuration(const std::string& phoneme);
+    void detectStress(std::vector<PhonemeResult>& phonemes);
+
+    // Helper methods
+    std::string toLowerCase(const std::string& text) const;
+    bool isVowel(char c) const;
+    bool isConsonant(char c) const;
+    std::string getSyllableStressPattern(const std::string& word);
+
+    // Validation
+    bool validatePhonemes(const std::vector<std::string>& phonemes);
 };
 
 } // namespace ChoirV2

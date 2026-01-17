@@ -12,10 +12,21 @@ build/
 .idea/
 *.swp
 *.swo
+*.user
+*.xcuserdata
+*.suo
+*.userosscache
+*.sln.docstates
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
 # Beads
 .beads/*.db
@@ -28,6 +39,7 @@ cmake_install.cmake
 Makefile
 *.cmake
 !CMakeLists.txt
+CMakeScripts/
 
 # JUCE
 JUCE/
@@ -41,3 +53,73 @@ tests/test_data/
 *.exe
 *.out
 *.app
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Plugin artifacts
+plugins/vst3/*.vst3
+plugins/au/*.component
+plugins/clap/*.clap
+plugins/lv2/*.lv2
+plugins/standalone/
+plugins/auv3/
+
+# Xcode
+*.xcodeproj/xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# Android
+*.apk
+*.ap_
+*.dex
+*.class
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+*.swp
+*~.nib
+
+# Package managers
+node_modules/
+bower_components/
+
+# Generated files
+generated/
+codegen/
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Artifacts (build outputs)
+.artifacts/

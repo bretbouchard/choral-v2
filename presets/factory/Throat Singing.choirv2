@@ -1,0 +1,40 @@
+{
+  "format": "choir-v2-preset",
+  "version": "2.0.0",
+  "metadata": {
+    "name": "Throat Singing",
+    "author": "White Room",
+    "description": "Traditional Tibetan throat singing with deep subharmonic resonance and sygyt style",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": ["throat-singing", "tibetan", "sygyt", "subharmonic", "meditative", "world"],
+    "createdDate": "2026-01-17T00:00:00Z",
+    "modifiedDate": "2026-01-17T00:00:00Z",
+    "pluginVersion": "2.0.0"
+  },
+  "parameters": {
+    "language": "throat-singing",
+    "lyrics": "ohm hum",
+    "numVoices": 10,
+    "masterGain": -5.0,
+    "synthesisMethod": "subharmonic",
+    "formantMix": 30.0,
+    "subharmonicMix": 70.0,
+    "stereoWidth": 60.0,
+    "vibratoRate": 4.0,
+    "vibratoDepth": 15.0,
+    "reverbMix": 35.0,
+    "reverbSize": 65.0,
+    "attackTime": 150.0,
+    "releaseTime": 500.0,
+    "enableAntiAliasing": true,
+    "enableSpectralEnhancement": true,
+    "oversamplingFactor": 2.0,
+    "pitchVariation": 5.0,
+    "timingVariation": 3.0,
+    "formantVariation": 10.0,
+    "breathiness": 5.0,
+    "warmth": 60.0,
+    "brightness": 25.0
+  }
+}

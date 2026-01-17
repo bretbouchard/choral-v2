@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
+#include <nlohmann/json.hpp>
 
 namespace ChoirV2 {
 
@@ -95,6 +97,7 @@ private:
 
     bool validateLanguage(const LanguageDefinition& lang);
     bool parseJSON(const std::string& json_content, LanguageDefinition& lang);
+    void parsePhoneme(const std::string& phoneme_id, const nlohmann::json& phoneme_data);
 };
 
 } // namespace ChoirV2

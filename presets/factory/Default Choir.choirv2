@@ -1,0 +1,40 @@
+{
+  "format": "choir-v2-preset",
+  "version": "2.0.0",
+  "metadata": {
+    "name": "Default Choir",
+    "author": "White Room",
+    "description": "Balanced 8-voice choir preset with warm, natural vocal sound",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": ["balanced", "warm", "natural", "choir", "vocal"],
+    "createdDate": "2026-01-17T00:00:00Z",
+    "modifiedDate": "2026-01-17T00:00:00Z",
+    "pluginVersion": "2.0.0"
+  },
+  "parameters": {
+    "language": "english",
+    "lyrics": "ah ee ih oh oo",
+    "numVoices": 8,
+    "masterGain": -3.0,
+    "synthesisMethod": "formant",
+    "formantMix": 80.0,
+    "subharmonicMix": 20.0,
+    "stereoWidth": 75.0,
+    "vibratoRate": 6.0,
+    "vibratoDepth": 30.0,
+    "reverbMix": 25.0,
+    "reverbSize": 50.0,
+    "attackTime": 50.0,
+    "releaseTime": 200.0,
+    "enableAntiAliasing": true,
+    "enableSpectralEnhancement": true,
+    "oversamplingFactor": 1.0,
+    "pitchVariation": 10.0,
+    "timingVariation": 5.0,
+    "formantVariation": 15.0,
+    "breathiness": 10.0,
+    "warmth": 20.0,
+    "brightness": 50.0
+  }
+}

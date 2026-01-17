@@ -1,0 +1,40 @@
+{
+  "format": "choir-v2-preset",
+  "version": "2.0.0",
+  "metadata": {
+    "name": "Massed Voices",
+    "author": "White Room",
+    "description": "Maximum power 60-voice English choir with wall of sound and epic projection",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": ["massed", "maximum", "powerful", "epic", "wall-of-sound", "english"],
+    "createdDate": "2026-01-17T00:00:00Z",
+    "modifiedDate": "2026-01-17T00:00:00Z",
+    "pluginVersion": "2.0.0"
+  },
+  "parameters": {
+    "language": "english",
+    "lyrics": "oh ah ee ih oo ay",
+    "numVoices": 60,
+    "masterGain": -9.0,
+    "synthesisMethod": "formant",
+    "formantMix": 88.0,
+    "subharmonicMix": 12.0,
+    "stereoWidth": 100.0,
+    "vibratoRate": 6.2,
+    "vibratoDepth": 32.0,
+    "reverbMix": 40.0,
+    "reverbSize": 85.0,
+    "attackTime": 80.0,
+    "releaseTime": 350.0,
+    "enableAntiAliasing": true,
+    "enableSpectralEnhancement": true,
+    "oversamplingFactor": 2.0,
+    "pitchVariation": 18.0,
+    "timingVariation": 9.0,
+    "formantVariation": 22.0,
+    "breathiness": 12.0,
+    "warmth": 25.0,
+    "brightness": 60.0
+  }
+}

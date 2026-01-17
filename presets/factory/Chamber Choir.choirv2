@@ -1,0 +1,40 @@
+{
+  "format": "choir-v2-preset",
+  "version": "2.0.0",
+  "metadata": {
+    "name": "Chamber Choir",
+    "author": "White Room",
+    "description": "Intimate 12-voice Latin chamber choir with tight ensemble and warm projection",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": ["chamber", "intimate", "latin", "ensemble", "warm", "classical"],
+    "createdDate": "2026-01-17T00:00:00Z",
+    "modifiedDate": "2026-01-17T00:00:00Z",
+    "pluginVersion": "2.0.0"
+  },
+  "parameters": {
+    "language": "latin",
+    "lyrics": "ave maria gratia",
+    "numVoices": 12,
+    "masterGain": -4.0,
+    "synthesisMethod": "diphone",
+    "formantMix": 75.0,
+    "subharmonicMix": 25.0,
+    "stereoWidth": 65.0,
+    "vibratoRate": 5.8,
+    "vibratoDepth": 28.0,
+    "reverbMix": 20.0,
+    "reverbSize": 40.0,
+    "attackTime": 60.0,
+    "releaseTime": 250.0,
+    "enableAntiAliasing": true,
+    "enableSpectralEnhancement": true,
+    "oversamplingFactor": 1.0,
+    "pitchVariation": 8.0,
+    "timingVariation": 4.0,
+    "formantVariation": 12.0,
+    "breathiness": 8.0,
+    "warmth": 35.0,
+    "brightness": 55.0
+  }
+}

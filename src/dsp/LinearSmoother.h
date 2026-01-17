@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <vector>
+
 namespace ChoirV2 {
 
 /**

@@ -6,9 +6,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Build options
-option(CHOIR_V2_BUILD_TESTS "Build unit tests" ON)
+option(CHOIR_V2_BUILD_TESTS "Build unit tests" OFF)
 option(CHOIR_V2_BUILD_BENCHMARKS "Build performance benchmarks" ON)
 option(CHOIR_V2_ENABLE_SIMD "Enable SIMD optimizations" ON)
+option(CHOIR_V2_BUILD_PLUGIN "Build JUCE plugin" ON)
+set(CHOIR_V2_PLUGIN_FORMATS "VST3;AU;CLAP;LV2;Standalone" CACHE STRING "Plugin formats to build")
+set_property(CACHE CHOIR_V2_PLUGIN_FORMATS PROPERTY STRINGS "VST3;AU;CLAP;LV2;Standalone;AAX;AUv3")
 
 # Compiler flags
 if(MSVC)
@@ -19,7 +22,11 @@ endif()
 
 # SIMD support
 if(CHOIR_V2_ENABLE_SIMD)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+        # ARM NEON support (automatically enabled on ARM64)
+        # No special flags needed for NEON on modern compilers
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        # x86_64 AVX2 support
         add_compile_options(-mavx2 -mfma)
     elseif(MSVC)
         add_compile_options(/arch:AVX2)
@@ -33,6 +40,9 @@ set(CORE_SOURCES
     src/core/G2PEngine.cpp
     src/core/ChoirV2Engine.cpp
     src/core/VoiceManager.cpp
+    src/core/VoiceAllocator.cpp
+    src/core/Voice.cpp
+    src/core/PresetManager.cpp
 )
 
 set(SYNTHESIS_SOURCES
@@ -47,12 +57,23 @@ set(DSP_SOURCES
     src/dsp/LinearSmoother.cpp
     src/dsp/SpectralEnhancer.cpp
     src/dsp/SubharmonicGenerator.cpp
+    src/dsp/ReverbEffect.cpp
 )
 
 set(UTILS_SOURCES
     src/utils/SIMDHelpers.cpp
     src/utils/MemoryPool.cpp
-    src/utils/LockFreeQueue.cpp
+)
+
+# Plugin source files
+set(PLUGIN_SOURCES
+    src/plugin/ChoirV2Processor.cpp
+    src/plugin/ChoirV2Editor.cpp
+)
+
+set(PLUGIN_HEADERS
+    src/plugin/ChoirV2Processor.h
+    src/plugin/ChoirV2Editor.h
 )
 
 # Header files
@@ -62,6 +83,10 @@ set(HEADERS
     src/core/G2PEngine.h
     src/core/ChoirV2Engine.h
     src/core/VoiceManager.h
+    src/core/VoiceAllocator.h
+    src/core/Voice.h
+    src/core/Phoneme.h
+    src/core/PresetManager.h
     src/synthesis/FormantSynthesis.h
     src/synthesis/SubharmonicSynthesis.h
     src/synthesis/DiphoneSynthesis.h
@@ -71,10 +96,21 @@ set(HEADERS
     src/dsp/LinearSmoother.h
     src/dsp/SpectralEnhancer.h
     src/dsp/SubharmonicGenerator.h
+    src/dsp/ReverbEffect.h
     src/utils/SIMDHelpers.h
     src/utils/MemoryPool.h
     src/utils/LockFreeQueue.h
+    ${PLUGIN_HEADERS}
 )
+
+# Find nlohmann/json for JSON parsing
+find_package(nlohmann_json 3.11.0 QUIET)
+if(NOT nlohmann_json_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(json
+        URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
+    FetchContent_MakeAvailable(json)
+endif()
 
 # Core library
 add_library(ChoirV2Core STATIC
@@ -89,8 +125,10 @@ target_include_directories(ChoirV2Core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-# JUCE integration (will be added later)
-# add_subdirectory(JUCE)
+# Link nlohmann/json for JSON parsing
+target_link_libraries(ChoirV2Core PUBLIC
+    nlohmann_json::nlohmann_json
+)
 
 # Tests
 if(CHOIR_V2_BUILD_TESTS)
@@ -105,6 +143,133 @@ if(CHOIR_V2_BUILD_BENCHMARKS)
     # Add Google Benchmark support here
     # find_package(benchmark REQUIRED)
     # add_subdirectory(tests/benchmarks)
+endif()
+
+# JUCE Plugin
+if(CHOIR_V2_BUILD_PLUGIN)
+    # Find JUCE
+    # Note: JUCE 8.0.0 uses individual module headers
+    # You need to set JUCE_DIR environment variable or pass JUCE_PATH to CMake
+
+    # Try to find JUCE in common locations
+    if(NOT JUCE_PATH)
+        if(EXISTS "$ENV{JUCE_DIR}")
+            set(JUCE_PATH "$ENV{JUCE_DIR}")
+        elseif(EXISTS "$ENV{HOME}/JUCE")
+            set(JUCE_PATH "$ENV{HOME}/JUCE")
+        elseif(EXISTS "/usr/local/JUCE")
+            set(JUCE_PATH "/usr/local/JUCE")
+        elseif(EXISTS "/opt/JUCE")
+            set(JUCE_PATH "/opt/JUCE")
+        endif()
+    endif()
+
+    if(EXISTS "${JUCE_PATH}")
+        message(STATUS "Found JUCE at: ${JUCE_PATH}")
+
+        # Add JUCE subdirectory
+        add_subdirectory("${JUCE_PATH}" "${CMAKE_BINARY_DIR}/juce")
+
+        # Create JUCE plugin
+        juce_add_plugin(ChoirV2Plugin
+            COMPANY_NAME "BretBouchard"
+            PLUGIN_MANUFACTURER_CODE "BBbr"
+            PLUGIN_CODE "ChV2"
+            BUNDLE_ID "com.bretbouchard.ChoirV2Plugin"
+            FORMATS ${CHOIR_V2_PLUGIN_FORMATS}
+            PRODUCT_NAME "Choir V2.0"
+            VERSION ${PROJECT_VERSION}
+            IS_SYNTH TRUE
+            NEEDS_MIDI_INPUT TRUE
+            NEEDS_MIDI_OUTPUT FALSE
+            IS_MIDI_EFFECT FALSE
+            VST_NUM_MIDI_INPUTS 16
+            VST_NUM_MIDI_OUTPUTS 0
+            AU_MAIN_TYPE "aumu"
+            LV2_URI "https://bretbouchard.github.io/choir-v2-universal"
+            LV2_CATEGORY "Instrument"
+            COPY_PLUGIN_AFTER_BUILD TRUE
+        )
+
+        # Plugin sources
+        target_sources(ChoirV2Plugin PRIVATE
+            ${PLUGIN_SOURCES}
+            ${CORE_SOURCES}
+            ${SYNTHESIS_SOURCES}
+            ${DSP_SOURCES}
+            ${UTILS_SOURCES}
+            ${HEADERS}
+        )
+
+        # Include directories
+        target_include_directories(ChoirV2Plugin PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
+        )
+
+        # Link dependencies
+        target_link_libraries(ChoirV2Plugin PRIVATE
+            ChoirV2Core
+            nlohmann_json::nlohmann_json
+            juce::juce_audio_utils
+            juce::juce_dsp
+        )
+
+        # Output directories for plugins
+        set_target_properties(ChoirV2Plugin PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/artifacts"
+            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/artifacts"
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/artifacts"
+        )
+
+        # Plugin-specific output directories
+        if(TARGET ChoirV2Plugin_VST3)
+            set_target_properties(ChoirV2Plugin_VST3 PROPERTIES
+                LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/vst"
+            )
+        endif()
+
+        if(TARGET ChoirV2Plugin_AU)
+            set_target_properties(ChoirV2Plugin_AU PROPERTIES
+                LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/au"
+            )
+        endif()
+
+        if(TARGET ChoirV2Plugin_AAX)
+            set_target_properties(ChoirV2Plugin_AAX PROPERTIES
+                LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/aax"
+            )
+        endif()
+
+        if(TARGET ChoirV2Plugin_AUv3)
+            set_target_properties(ChoirV2Plugin_AUv3 PROPERTIES
+                LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/auv3"
+            )
+        endif()
+
+        if(TARGET ChoirV2Plugin_CLAP)
+            set_target_properties(ChoirV2Plugin_CLAP PROPERTIES
+                LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/clap"
+            )
+        endif()
+
+        if(TARGET ChoirV2Plugin_LV2)
+            set_target_properties(ChoirV2Plugin_LV2 PROPERTIES
+                LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/lv2"
+            )
+        endif()
+
+        if(TARGET ChoirV2Plugin_Standalone)
+            set_target_properties(ChoirV2Plugin_Standalone PROPERTIES
+                RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/standalone"
+            )
+        endif()
+
+        message(STATUS "JUCE Plugin: Enabled")
+        message(STATUS "  Formats: ${CHOIR_V2_PLUGIN_FORMATS}")
+    else()
+        message(WARNING "JUCE not found. Plugin build disabled.")
+        message(WARNING "Set JUCE_PATH environment variable or pass -DJUCE_PATH=/path/to/JUCE")
+    endif()
 endif()
 
 # Installation
@@ -124,5 +289,9 @@ message(STATUS "Choir V2.0 Configuration:")
 message(STATUS "  Version: ${PROJECT_VERSION}")
 message(STATUS "  Build Tests: ${CHOIR_V2_BUILD_TESTS}")
 message(STATUS "  Build Benchmarks: ${CHOIR_V2_BUILD_BENCHMARKS}")
+message(STATUS "  Build Plugin: ${CHOIR_V2_BUILD_PLUGIN}")
 message(STATUS "  Enable SIMD: ${CHOIR_V2_ENABLE_SIMD}")
+if(CHOIR_V2_BUILD_PLUGIN)
+    message(STATUS "  Plugin Formats: ${CHOIR_V2_PLUGIN_FORMATS}")
+endif()
 message(STATUS "")

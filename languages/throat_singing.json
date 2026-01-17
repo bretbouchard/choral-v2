@@ -1,0 +1,430 @@
+{
+  "language_id": "throat_singing",
+  "language_name": "Throat Singing (Vocal Technique)",
+  "version": "1.0",
+  "phoneme_set": "subharmonic_custom",
+  "script": "technique",
+  "direction": "ltr",
+  "encoding": "utf-8",
+  "synthesis_method": "subharmonic",
+  "description": "Not a language but a vocal technique creating multiple pitches simultaneously",
+
+  "phonemes": {
+    "drone_fundamental": {
+      "id": "drone_fundamental",
+      "ipa": "/◌̞/",
+      "category": "drone",
+      "formants": {
+        "f1": 300,
+        "f2": 800,
+        "f3": 2000,
+        "f4": 3500,
+        "bw1": 40,
+        "bw2": 70,
+        "bw3": 120,
+        "bw4": 150
+      },
+      "articulatory": {
+        "is_nasal": false,
+        "is_rounded": true,
+        "is_voiced": true,
+        "is_lateral": false,
+        "is_rhotic": false
+      },
+      "temporal": {
+        "min_duration": 500,
+        "max_duration": 5000,
+        "default_duration": 2000
+      },
+      "subharmonic_params": {
+        "fundamental_freq": 110.0,
+        "subharmonic_ratio": 2.0,
+        "subharmonic_amplitude": 0.3
+      }
+    },
+    "melody_formant": {
+      "id": "melody_formant",
+      "ipa": "/F/",
+      "category": "formant",
+      "formants": {
+        "f1": 800,
+        "f2": 1200,
+        "f3": 2500,
+        "f4": 3500,
+        "bw1": 60,
+        "bw2": 80,
+        "bw3": 120,
+        "bw4": 150
+      },
+      "articulatory": {
+        "is_nasal": false,
+        "is_rounded": false,
+        "is_voiced": true,
+        "is_lateral": false,
+        "is_rhotic": false
+      },
+      "temporal": {
+        "min_duration": 200,
+        "max_duration": 2000,
+        "default_duration": 800
+      },
+      "subharmonic_params": {
+        "formant_center_freq": 1200.0,
+        "formant_bandwidth": 150.0,
+        "formant_amplitude": 0.7
+      }
+    },
+    "khorekteer": {
+      "id": "khorekteer",
+      "ipa": "/X/",
+      "category": "drone",
+      "formants": {
+        "f1": 250,
+        "f2": 700,
+        "f3": 1800,
+        "f4": 3500,
+        "bw1": 40,
+        "bw2": 70,
+        "bw3": 120,
+        "bw4": 150
+      },
+      "articulatory": {
+        "is_nasal": false,
+        "is_rounded": true,
+        "is_voiced": true,
+        "is_lateral": false,
+        "is_rhotic": false
+      },
+      "temporal": {
+        "min_duration": 500,
+        "max_duration": 5000,
+        "default_duration": 2000
+      },
+      "subharmonic_params": {
+        "fundamental_freq": 110.0,
+        "subharmonic_ratio": 2.0,
+        "chest_voice": true
+      }
+    },
+    "kargyraa_bass": {
+      "id": "kargyraa_bass",
+      "ipa": "/K/",
+      "category": "subharmonic",
+      "formants": {
+        "f1": 200,
+        "f2": 600,
+        "f3": 1500,
+        "f4": 3500,
+        "bw1": 50,
+        "bw2": 80,
+        "bw3": 120,
+        "bw4": 150
+      },
+      "articulatory": {
+        "is_nasal": false,
+        "is_rounded": true,
+        "is_voiced": true,
+        "is_lateral": false,
+        "is_rhotic": false
+      },
+      "temporal": {
+        "min_duration": 500,
+        "max_duration": 5000,
+        "default_duration": 2000
+      },
+      "subharmonic_params": {
+        "fundamental_freq": 110.0,
+        "subharmonic_ratio": 3.0,
+        "ventricular_folds": true,
+        "subharmonic_amplitude": 0.6
+      }
+    },
+    "sygyt_whistle": {
+      "id": "sygyt_whistle",
+      "ipa": "/S/",
+      "category": "formant",
+      "formants": {
+        "f1": 400,
+        "f2": 1800,
+        "f3": 2500,
+        "f4": 3500,
+        "bw1": 50,
+        "bw2": 60,
+        "bw3": 120,
+        "bw4": 150
+      },
+      "articulatory": {
+        "is_nasal": false,
+        "is_rounded": false,
+        "is_voiced": true,
+        "is_lateral": false,
+        "is_rhotic": false
+      },
+      "temporal": {
+        "min_duration": 200,
+        "max_duration": 2000,
+        "default_duration": 800
+      },
+      "subharmonic_params": {
+        "melody_formant_freq": 1800.0,
+        "formant_bandwidth": 80.0,
+        "formant_amplitude": 0.8,
+        "sharp_resonance": true
+      }
+    },
+    "borbangnadyr_pulse": {
+      "id": "borbangnadyr_pulse",
+      "ipa": "/B/",
+      "category": "pulsed",
+      "formants": {
+        "f1": 350,
+        "f2": 900,
+        "f3": 2200,
+        "f4": 3500,
+        "bw1": 50,
+        "bw2": 80,
+        "bw3": 120,
+        "bw4": 150
+      },
+      "articulatory": {
+        "is_nasal": false,
+        "is_rounded": true,
+        "is_voiced": true,
+        "is_lateral": false,
+        "is_rhotic": false
+      },
+      "temporal": {
+        "min_duration": 500,
+        "max_duration": 5000,
+        "default_duration": 2000
+      },
+      "subharmonic_params": {
+        "pulse_rate": 6.0,
+        "pulse_depth": 0.5,
+        "formant_modulation": true
+      }
+    },
+    "ezengilear_rider": {
+      "id": "ezengilear_rider",
+      "ipa": "/E/",
+      "category": "pulsed",
+      "formants": {
+        "f1": 300,
+        "f2": 800,
+        "f3": 2000,
+        "f4": 3500,
+        "bw1": 50,
+        "bw2": 80,
+        "bw3": 120,
+        "bw4": 150
+      },
+      "articulatory": {
+        "is_nasal": false,
+        "is_rounded": true,
+        "is_voiced": true,
+        "is_lateral": false,
+        "is_rhotic": false
+      },
+      "temporal": {
+        "min_duration": 500,
+        "max_duration": 5000,
+        "default_duration": 2000
+      },
+      "subharmonic_params": {
+        "rhythm_pattern": "canter",
+        "pulse_rate": 3.0,
+        "triplet_feel": true
+      }
+    },
+    "khoomei_mid": {
+      "id": "khoomei_mid",
+      "ipa": "/H/",
+      "category": "formant",
+      "formants": {
+        "f1": 350,
+        "f2": 1200,
+        "f3": 2500,
+        "f4": 3500,
+        "bw1": 50,
+        "bw2": 70,
+        "bw3": 120,
+        "bw4": 150
+      },
+      "articulatory": {
+        "is_nasal": false,
+        "is_rounded": true,
+        "is_voiced": true,
+        "is_lateral": false,
+        "is_rhotic": false
+      },
+      "temporal": {
+        "min_duration": 500,
+        "max_duration": 5000,
+        "default_duration": 2000
+      },
+      "subharmonic_params": {
+        "drone_freq": 110.0,
+        "melody_formant": 1200.0,
+        "balance": "equal"
+      }
+    }
+  },
+
+  "grapheme_to_phoneme_rules": [],
+
+  "stress_rules": [],
+
+  "diphthongs": [],
+
+  "test_words": ["drone", "melody", "kargyraa", "sygyt", "khoomei"],
+
+  "synthesis_params": {
+    "default_pitch": 55.0,
+    "default_velocity": 0.9,
+    "formant_smoothing": 0.005,
+    "subharmonic_mix": 0.5,
+    "formant_enhancement": 0.7,
+    "ventricular_fold_vibration": true
+  },
+
+  "presets": {
+    "tibetan_sygyt": {
+      "name": "Tibetan Sygyt",
+      "description": "High-pitched whistle-like melody over drone",
+      "base_phoneme": "sygyt_whistle",
+      "drone_phoneme": "drone_fundamental",
+      "params": {
+        "fundamental_freq": 110.0,
+        "melody_formant_center": 1800.0,
+        "melody_formant_bandwidth": 80.0,
+        "formant_amplitude": 0.85,
+        "subharmonic_ratio": 2.0,
+        "subharmonic_amplitude": 0.4
+      },
+      "technique": "Formant whistle with 2:1 subharmonic drone"
+    },
+    "tuva_kargyraa": {
+      "name": "Tuva Kargyraa",
+      "description": "Deep sub-bass with 3:1 subharmonic",
+      "base_phoneme": "kargyraa_bass",
+      "params": {
+        "fundamental_freq": 110.0,
+        "subharmonic_ratio": 3.0,
+        "subharmonic_amplitude": 0.7,
+        "ventricular_folds": true,
+        "chest_voice": true,
+        "formant_lowering": 0.3
+      },
+      "technique": "Ventricular fold vibration creating subharmonic"
+    },
+    "mongolian_khoomei": {
+      "name": "Mongolian Khoomei",
+      "description": "Balanced drone-midrange melody",
+      "base_phoneme": "khoomei_mid",
+      "drone_phoneme": "drone_fundamental",
+      "params": {
+        "fundamental_freq": 110.0,
+        "drone_amplitude": 0.5,
+        "melody_formant": 1200.0,
+        "formant_amplitude": 0.6,
+        "subharmonic_ratio": 2.0,
+        "balance": "equal"
+      },
+      "technique": "Equal balance drone and melody"
+    },
+    "siberian_borbangnadyr": {
+      "name": "Siberian Borbangnadyr",
+      "description": "Pulsating drone with rolling rhythm",
+      "base_phoneme": "borbangnadyr_pulse",
+      "params": {
+        "fundamental_freq": 110.0,
+        "pulse_rate": 6.0,
+        "pulse_depth": 0.6,
+        "formant_modulation": true,
+        "modulation_rate": 3.0
+      },
+      "technique": "Pulsed drone with formant modulation"
+    },
+    "altai_ezengilear": {
+      "name": "Altai Ezengilear",
+      "description": "Rhythmic canter pattern mimicking horse riding",
+      "base_phoneme": "ezengilear_rider",
+      "params": {
+        "fundamental_freq": 110.0,
+        "rhythm_pattern": "canter",
+        "pulse_rate": 3.0,
+        "triplet_feel": true,
+        "accent_pattern": [1.0, 0.5, 0.7]
+      },
+      "technique": "Rhythmic pulsation in canter rhythm"
+    },
+    "subhuman_deep": {
+      "name": "Sub-human Deep",
+      "description": "Extreme sub-bass with 4:1 subharmonic",
+      "base_phoneme": "kargyraa_bass",
+      "params": {
+        "fundamental_freq": 82.0,
+        "subharmonic_ratio": 4.0,
+        "subharmonic_amplitude": 0.8,
+        "ventricular_folds": true,
+        "formant_lowering": 0.4,
+        "chest_resonance": 0.9
+      },
+      "technique": "Extreme subharmonic for inhuman bass"
+    }
+  },
+
+  "technique_description": {
+    "overview": "Throat singing is a vocal technique where a single vocalist produces multiple pitches simultaneously through precise control of vocal tract resonances and subharmonic vibration of ventricular folds.",
+    "mechanism": "The vocalist maintains a low drone pitch (fundamental) while shaping the vocal tract to emphasize specific formant frequencies that emerge as distinct melodic tones. Some styles also engage the ventricular (false) vocal folds to create subharmonics at integer ratios (2:1, 3:1, 4:1).",
+    "primary_styles": [
+      {
+        "name": "Sygyt",
+        "origin": "Tuva",
+        "characteristics": "High-pitched whistle-like melody, bright formant around 1800-2000 Hz",
+        "synthesis": "Narrow F2 formant, high amplitude, sharp resonance"
+      },
+      {
+        "name": "Kargyraa",
+        "origin": "Tuva",
+        "characteristics": "Deep sub-bass with 3:1 subharmonic, ventricular fold vibration",
+        "synthesis": "Subharmonic synthesis, lowered formants, chest voice"
+      },
+      {
+        "name": "Khoomei",
+        "origin": "Mongolia",
+        "characteristics": "Mid-range melody with balanced drone",
+        "synthesis": "F2 around 1200 Hz, equal drone/melody balance"
+      },
+      {
+        "name": "Borbangnadyr",
+        "origin": "Tuva",
+        "characteristics": "Rolling, pulsating drone",
+        "synthesis": "Amplitude modulation, pulsed formants"
+      },
+      {
+        "name": "Ezengilear",
+        "origin": "Altai",
+        "characteristics": "Rhythmic canter pattern",
+        "synthesis": "Rhythmic pulsation in canter rhythm"
+      }
+    ],
+    "synthesis_requirements": {
+      "fundamental": "Low drone pitch (typically 82-147 Hz)",
+      "subharmonics": "Integer ratio subharmonics (2:1, 3:1, 4:1)",
+      "formants": "Precise formant control for melody",
+      "modulation": "Amplitude and frequency modulation for rhythmic styles",
+      "ventricular_folds": "Simulated false vocal fold vibration for subharmonics"
+    }
+  },
+
+  "synthesis_notes": {
+    "subharmonic_generation": "Use oscillator sync or ring modulation to create integer-ratio subharmonics",
+    "formant_synthesis": "Implement narrow bandpass filters or formant synthesis for melody",
+    "drone_layer": "Separate oscillator layer for fundamental drone",
+    "modulation": "LFO or envelope modulation for pulsed styles",
+    "resonance": "High Q filters for whistle-like sygyt",
+    "chest_voice": "Lower formant frequencies and increased bandwidth for kargyraa",
+    "mixing": "Balance between drone, subharmonic, and formant layers"
+  }
+}

@@ -12,53 +12,74 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
+#include <mutex>
+#include <nlohmann/json.hpp>
 
 namespace ChoirV2 {
 
 /**
- * @brief Phoneme representation with acoustic properties
- *
- * Stores the acoustic characteristics of a single phoneme
- * including formants, duration, and transition parameters.
+ * @brief Articulatory features for phonemes
  */
-struct Phoneme {
-    std::string symbol;           // IPA symbol
-    std::string name;             // Descriptive name
-    std::string category;         // vowel, consonant, diphone, etc.
-
-    // Formant frequencies (Hz)
-    float f1;                     // First formant
-    float f2;                     // Second formant
-    float f3;                     // Third formant
-    float f4;                     // Fourth formant (optional)
-
-    // Formant bandwidths (Hz)
-    float b1;                     // First formant bandwidth
-    float b2;                     // Second formant bandwidth
-    float b3;                     // Third formant bandwidth
-
-    // Temporal characteristics
-    float min_duration;           // Minimum duration (seconds)
-    float max_duration;           // Maximum duration (seconds)
-    float default_duration;       // Default duration (seconds)
-
-    // Transition parameters
-    float transition_time;        // Time to transition to/from this phoneme
-    float spectral_continuity;    // How smoothly spectra connect (0-1)
-
-    // Voicing
-    bool voiced;                  // Is this a voiced phoneme?
-    float pitch_mod;              // Pitch modulation amount (0-1)
-
-    // Language-specific overrides (JSON-based)
-    std::string language_overrides; // JSON string with language-specific params
+struct ArticulatoryFeatures {
+    bool is_nasal = false;     // Nasal consonant (m, n, ng)
+    bool is_rounded = false;   // Lip rounding (rounded vowels)
+    bool is_voiced = true;     // Voiced vs unvoiced
+    bool is_lateral = false;   // Lateral airflow (l)
+    bool is_rhotic = false;    // R-colored sounds (r, ER)
 };
 
 /**
- * @brief Universal phoneme database
+ * @brief Temporal characteristics for phonemes
+ */
+struct TemporalFeatures {
+    float min_duration = 50.0f;       // Minimum duration (ms)
+    float max_duration = 300.0f;      // Maximum duration (ms)
+    float default_duration = 100.0f;  // Default duration (ms)
+};
+
+/**
+ * @brief Formant frequencies and bandwidths
+ */
+struct FormantData {
+    float f1 = 500.0f;   // First formant frequency (Hz)
+    float f2 = 1500.0f;  // Second formant frequency (Hz)
+    float f3 = 2500.0f;  // Third formant frequency (Hz)
+    float f4 = 3500.0f;  // Fourth formant frequency (Hz)
+    float bw1 = 50.0f;   // First formant bandwidth (Hz)
+    float bw2 = 80.0f;   // Second formant bandwidth (Hz)
+    float bw3 = 120.0f;  // Third formant bandwidth (Hz)
+    float bw4 = 150.0f;  // Fourth formant bandwidth (Hz)
+};
+
+/**
+ * @brief Phoneme representation with complete acoustic properties
+ *
+ * Stores the acoustic and articulatory characteristics of a single phoneme
+ * including formants, duration, and transition parameters.
+ */
+struct Phoneme {
+    std::string id;              // Unique identifier (e.g., "AA", "IY", "K")
+    std::string ipa;             // IPA symbol (e.g., "/ɑ/", "/i/", "/k/")
+    std::string category;        // vowel, consonant, diphthong, plosive, etc.
+
+    FormantData formants;           // Formant frequencies and bandwidths
+    ArticulatoryFeatures articulatory; // Articulatory features
+    TemporalFeatures temporal;      // Temporal characteristics
+
+    // Helper methods for formant access
+    float getFormantFrequency(int index) const;
+    float getFormantBandwidth(int index) const;
+    bool hasFormant(int index) const;
+};
+
+/**
+ * @brief Universal phoneme database with JSON loading
  *
  * Manages the collection of all phonemes across all languages.
  * Phonemes are stored in JSON format in languages/ directory.
+ *
+ * Thread-safe for concurrent read access.
  */
 class PhonemeDatabase {
 public:
@@ -74,14 +95,21 @@ public:
 
     /**
      * @brief Get a phoneme by symbol
-     * @param symbol IPA symbol (e.g., "ə", "æ", "θ")
+     * @param symbol Phoneme symbol (e.g., "AA", "IY", "K")
      * @return Phoneme data, or nullptr if not found
      */
     std::shared_ptr<Phoneme> getPhoneme(const std::string& symbol) const;
 
     /**
+     * @brief Get a phoneme by IPA symbol
+     * @param ipa IPA symbol (e.g., "/ɑ/", "/i/", "/k/")
+     * @return Phoneme data, or nullptr if not found
+     */
+    std::shared_ptr<Phoneme> getPhonemeByIPA(const std::string& ipa) const;
+
+    /**
      * @brief Get all phonemes for a category
-     * @param category Category name (e.g., "vowel", "consonant")
+     * @param category Category name (e.g., "vowel", "consonant", "plosive")
      * @return Vector of matching phonemes
      */
     std::vector<std::shared_ptr<Phoneme>> getByCategory(
@@ -89,15 +117,66 @@ public:
     ) const;
 
     /**
+     * @brief Get all loaded phonemes
+     * @return Vector of all phonemes
+     */
+    std::vector<std::shared_ptr<Phoneme>> getAllPhonemes() const;
+
+    /**
      * @brief Get number of phonemes in database
      */
-    size_t size() const { return phonemes_.size(); }
+    size_t size() const;
+
+    /**
+     * @brief Clear all loaded phonemes
+     */
+    void clear();
+
+    /**
+     * @brief Check if a phoneme exists
+     * @param symbol Phoneme symbol
+     * @return true if phoneme exists in database
+     */
+    bool hasPhoneme(const std::string& symbol) const;
+
+    /**
+     * @brief Get all categories present in database
+     * @return Vector of category names
+     */
+    std::vector<std::string> getCategories() const;
+
+    /**
+     * @brief Create diphone transition data
+     * @param from Phoneme to transition from
+     * @param to Phoneme to transition to
+     * @param t Transition point (0.0 = from, 1.0 = to)
+     * @return Interpolated formant data
+     */
+    FormantData createDiphone(
+        const Phoneme& from,
+        const Phoneme& to,
+        float t
+    ) const;
 
 private:
-    std::vector<std::shared_ptr<Phoneme>> phonemes_;
     std::unordered_map<std::string, std::shared_ptr<Phoneme>> symbol_map_;
+    std::unordered_map<std::string, std::shared_ptr<Phoneme>> ipa_map_;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<Phoneme>>> category_map_;
+    mutable std::mutex mutex_;  // For thread-safe read access
 
-    bool parseJSON(const std::string& json_content);
+    // JSON parsing helpers
+    bool parsePhonemeObject(
+        const nlohmann::json& phoneme_obj,
+        std::shared_ptr<Phoneme>& phoneme
+    );
+
+    FormantData parseFormantData(const nlohmann::json& formants_obj);
+    ArticulatoryFeatures parseArticulatoryFeatures(const nlohmann::json& articulatory_obj);
+    TemporalFeatures parseTemporalFeatures(const nlohmann::json& temporal_obj);
+
+    // Formant interpolation for diphones
+    static float lerp(float a, float b, float t);
+    FormantData lerpFormants(const FormantData& a, const FormantData& b, float t) const;
 };
 
 } // namespace ChoirV2

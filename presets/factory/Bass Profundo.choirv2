@@ -1,0 +1,40 @@
+{
+  "format": "choir-v2-preset",
+  "version": "2.0.0",
+  "metadata": {
+    "name": "Bass Profundo",
+    "author": "White Room",
+    "description": "Sub-human deep 15-voice throat singing ensemble with earth-shaking subharmonics",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": ["bass", "profundo", "subharmonic", "deep", "earth-shaking", "powerful"],
+    "createdDate": "2026-01-17T00:00:00Z",
+    "modifiedDate": "2026-01-17T00:00:00Z",
+    "pluginVersion": "2.0.0"
+  },
+  "parameters": {
+    "language": "throat-singing",
+    "lyrics": "ohm hum ah",
+    "numVoices": 15,
+    "masterGain": -2.0,
+    "synthesisMethod": "subharmonic",
+    "formantMix": 20.0,
+    "subharmonicMix": 80.0,
+    "stereoWidth": 70.0,
+    "vibratoRate": 3.5,
+    "vibratoDepth": 20.0,
+    "reverbMix": 30.0,
+    "reverbSize": 80.0,
+    "attackTime": 180.0,
+    "releaseTime": 600.0,
+    "enableAntiAliasing": true,
+    "enableSpectralEnhancement": true,
+    "oversamplingFactor": 4.0,
+    "pitchVariation": 3.0,
+    "timingVariation": 2.0,
+    "formantVariation": 8.0,
+    "breathiness": 3.0,
+    "warmth": 80.0,
+    "brightness": 15.0
+  }
+}

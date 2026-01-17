@@ -1,7 +1,7 @@
 /*
  * Choir V2.0 - Universal Vocal Synthesis Platform
  *
- * VoiceManager.h - Multi-voice orchestration manager
+ * VoiceManager.h - Real-time safe multi-voice orchestration with SIMD optimization
  *
  * Copyright (c) 2026 Bret Bouchard
  * All rights reserved.
@@ -9,179 +9,454 @@
 
 #pragma once
 
-#include <memory>
 #include <vector>
-#include <queue>
+#include <memory>
+#include <atomic>
+#include <cstring>
+#include "VoiceAllocator.h"
 
 namespace ChoirV2 {
 
 // Forward declarations
-class ISynthesisMethod;
+class LinearSmoother;
+class FormantSynthesis;
+class SubharmonicSynthesis;
 
 /**
- * @brief Voice state
- */
-enum class VoiceState {
-    Idle,           // Voice not in use
-    Attack,         // Initial attack phase
-    Sustain,        // Sustaining a note
-    Decay,          // Decay phase
-    Release         // Release phase
-};
-
-/**
- * @brief Voice priority for voice stealing
- */
-enum class VoicePriority {
-    Critical = 0,   // Cannot be stolen (e.g., lead melody)
-    High = 1,       // Important (e.g., bass)
-    Medium = 2,     // Normal (e.g., harmony)
-    Low = 3         // Can be stolen (e.g., background)
-};
-
-/**
- * @brief Single voice instance
+ * @brief Single voice instance state
  *
- * Represents one synthesized voice in the choir.
- * Can be a note, a phoneme, or a continuous sound.
+ * Real-time safe voice state with pre-allocated buffers.
+ * Used by VoiceManager for voice processing.
  */
-struct Voice {
-    int id;                         // Unique voice ID
-    VoiceState state;               // Current state
-    VoicePriority priority;         // Priority for voice stealing
-
-    // Audio parameters
+struct VoiceInstance {
+    int id;                         // Voice ID (from VoiceAllocator)
+    bool active;                    // Voice active state
     float frequency;                // Fundamental frequency (Hz)
     float amplitude;                // Amplitude (0-1)
-    float pan;                      // Pan position (-1 to 1)
+    float pan;                      // Pan position (-1 to 1, left to right)
+    float age;                      // Voice age (seconds)
 
-    // Phoneme/syllable parameters
-    std::string current_phoneme;    // Current phoneme being synthesized
-    float phoneme_progress;         // Progress through phoneme (0-1)
+    // Synthesis state (placeholder for future integration)
+    void* synthesisState;           // Opaque pointer to synthesis state
+    float phase;                    // Phase accumulator
 
-    // Timing
-    double start_time;              // When voice started (seconds)
-    double duration;                // Total duration (seconds)
+    // Gain envelopes
+    float attackGain;               // Current attack envelope gain
+    float releaseGain;              // Current release envelope gain
+    bool inRelease;                 // Voice in release phase
 
-    // Envelope
-    float attack_time;              // Attack time (seconds)
-    float decay_time;               // Decay time (seconds)
-    float sustain_level;            // Sustain level (0-1)
-    float release_time;             // Release time (seconds)
+    // Performance tracking
+    float cpuUsage;                 // CPU usage per voice (0-1)
+
+    VoiceInstance()
+        : id(-1)
+        , active(false)
+        , frequency(0.0f)
+        , amplitude(0.0f)
+        , pan(0.0f)
+        , age(0.0f)
+        , synthesisState(nullptr)
+        , phase(0.0f)
+        , attackGain(0.0f)
+        , releaseGain(1.0f)
+        , inRelease(false)
+        , cpuUsage(0.0f)
+    {}
 };
 
 /**
- * @brief Voice allocation result
+ * @brief Voice processing parameters (with smoothing)
+ *
+ * All parameters are smoothed to prevent clicks and pops.
  */
-struct VoiceAllocation {
-    bool success;                   // Voice allocated successfully?
-    int voice_id;                   // Allocated voice ID (if successful)
-    std::string error_message;      // Error details (if failed)
+struct VoiceParameters {
+    float masterGain;               // Master gain (0-2)
+    float attackTime;               // Attack time (seconds)
+    float releaseTime;              // Release time (seconds)
+    float vibratoRate;              // Vibrato rate (Hz)
+    float vibratoDepth;             // Vibrato depth (0-1)
+    float formantShift;             // Formant shift (semitones)
+    float subharmonicMix;           // Subharmonic mix (0-1)
+
+    VoiceParameters()
+        : masterGain(1.0f)
+        , attackTime(0.01f)
+        , releaseTime(0.1f)
+        , vibratoRate(5.0f)
+        , vibratoDepth(0.0f)
+        , formantShift(0.0f)
+        , subharmonicMix(0.0f)
+    {}
 };
 
 /**
- * @brief Voice manager
+ * @brief SIMD batch processing context
  *
- * Manages multiple simultaneous voices with:
- * - Voice allocation (find free voice or steal low-priority voice)
- * - Voice stealing (when CPU limit is reached)
- * - Priority management (important voices preserved)
- * - State tracking (attack, sustain, decay, release)
+ * Processes voices in batches of 4 or 8 for SIMD optimization.
+ */
+struct SIMDBatch {
+    static constexpr int MAX_BATCH_SIZE = 8;  // AVX can process 8 floats
+    int voiceIds[MAX_BATCH_SIZE];             // Voice IDs in batch
+    int count;                                // Actual count (1-8)
+
+    SIMDBatch() : count(0) {
+        std::memset(voiceIds, 0, sizeof(voiceIds));
+    }
+};
+
+/**
+ * @brief Voice manager performance statistics
+ */
+struct VoiceManagerStats {
+    int totalVoices;                    // Total voices allocated
+    int activeVoices;                   // Currently active voices
+    int stolenVoices;                   // Voices stolen this session
+    float averageCpuUsage;              // Average CPU usage (0-1)
+    float peakCpuUsage;                 // Peak CPU usage (0-1)
+    int droppedVoices;                  // Voices dropped due to CPU overload
+
+    VoiceManagerStats()
+        : totalVoices(0)
+        , activeVoices(0)
+        , stolenVoices(0)
+        , averageCpuUsage(0.0f)
+        , peakCpuUsage(0.0f)
+        , droppedVoices(0)
+    {}
+};
+
+/**
+ * @brief Real-time safe voice orchestration manager
  *
- * CRITICAL: Single-threaded SIMD implementation (no threading)
- * for real-time safety.
+ * Orchestrates 40-60 simultaneous voice instances with SIMD optimization.
+ * Processes voices in batches for optimal CPU utilization.
+ *
+ * Design Principles:
+ * - Real-time safe: No allocations in processAudio()
+ * - SIMD-optimized: Process voices in batches of 4/8
+ * - Deterministic: Bounded execution time, no mutexes
+ * - Smooth: Parameter smoothing prevents clicks
+ * - Efficient: Sub-millisecond voice allocation
+ *
+ * Processing Pipeline (per sample):
+ * 1. Update parameters (with smoothing)
+ * 2. Process active voices (SIMD batch)
+ * 3. Apply voice gain/pan
+ * 4. Mix to output buffer
+ * 5. Update voice states (note-offs, releases)
+ *
+ * Performance Targets:
+ * - 60 voices @ 44.1kHz in < 30% CPU (Intel i7)
+ * - Sub-millisecond voice allocation
+ * - Deterministic timing (no mutexes)
+ *
+ * Usage:
+ * ```cpp
+ * VoiceManager manager(60, 44100.0);  // 60 voices, 44.1kHz
+ *
+ * // Prepare for playback
+ * manager.prepare(44100.0, 512);
+ *
+ * // Note on
+ * manager.noteOn(60, 100.0f);  // Middle C, velocity 100
+ *
+ * // Process audio (real-time safe)
+ * float* outputLeft = ...;
+ * float* outputRight = ...;
+ * int numSamples = 512;
+ * manager.processAudio(outputLeft, outputRight, numSamples);
+ *
+ * // Note off
+ * manager.noteOff(60, 0.0f);
+ * ```
  */
 class VoiceManager {
 public:
-    VoiceManager(int max_voices);
+    /**
+     * @brief Constructor
+     * @param maxVoices Maximum number of simultaneous voices (40-60)
+     * @param sampleRate Sample rate in Hz
+     *
+     * Pre-allocates all voice instances and buffers for real-time safety.
+     * No dynamic allocation during processAudio().
+     */
+    VoiceManager(int maxVoices = 60, double sampleRate = 44100.0);
     ~VoiceManager();
 
-    /**
-     * @brief Allocate a voice
-     * @param priority Voice priority
-     * @param frequency Fundamental frequency (Hz)
-     * @param amplitude Amplitude (0-1)
-     * @return Voice allocation result
-     */
-    VoiceAllocation allocateVoice(
-        VoicePriority priority,
-        float frequency,
-        float amplitude
-    );
+    // Prevent copying (real-time safety)
+    VoiceManager(const VoiceManager&) = delete;
+    VoiceManager& operator=(const VoiceManager&) = delete;
 
     /**
-     * @brief Release a voice
-     * @param voice_id Voice ID to release
+     * @brief Prepare for playback
+     * @param sampleRate Sample rate in Hz
+     * @param maxBlockSize Maximum samples per block
+     *
+     * Called once before audio processing starts.
+     * Pre-allocates buffers and prepares DSP components.
+     *
+     * Real-time safe to call from audio thread if sample rate unchanged.
      */
-    void releaseVoice(int voice_id);
+    void prepare(double sampleRate, int maxBlockSize);
 
     /**
-     * @brief Get a voice by ID
-     * @param voice_id Voice ID
-     * @return Voice pointer, or nullptr if not found
+     * @brief Process audio (real-time safe)
+     * @param outputLeft Left output buffer
+     * @param outputRight Right output buffer
+     * @param numSamples Number of samples to process
+     *
+     * Main audio processing function. Called every audio callback.
+     *
+     * Processing pipeline:
+     * 1. Update smoothed parameters
+     * 2. Process active voices in SIMD batches
+     * 3. Apply voice gain and pan
+     * 4. Mix down to stereo output
+     * 5. Update voice states (releases, note-offs)
+     *
+     * Real-time safe: No allocations, bounded execution time.
+     * SIMD-optimized: Processes voices in batches of 4/8.
      */
-    Voice* getVoice(int voice_id);
+    void processAudio(float* outputLeft, float* outputRight, int numSamples);
 
     /**
-     * @brief Get all active voices
-     * @return Vector of active voice pointers
+     * @brief Note on event
+     * @param midiNote MIDI note number (0-127)
+     * @param velocity Note velocity (0.0-127.0)
+     * @return Voice ID, or -1 if allocation failed
+     *
+     * Allocates a new voice for the note.
+     * Uses VoiceAllocator for priority-based voice stealing.
+     *
+     * Real-time safe: Sub-millisecond allocation.
      */
-    std::vector<Voice*> getActiveVoices();
+    int noteOn(int midiNote, float velocity);
 
     /**
-     * @brief Get number of active voices
+     * @brief Note off event
+     * @param midiNote MIDI note number (0-127)
+     * @param velocity Release velocity (0.0-127.0, typically 0)
+     *
+     * Triggers release envelope for matching voice(s).
+     * Voice enters release phase and fades out smoothly.
+     *
+     * Real-time safe.
+     */
+    void noteOff(int midiNote, float velocity);
+
+    /**
+     * @brief All notes off (panic)
+     *
+     * Immediately stops all voices (no release).
+     * Useful for panic button or transport stop.
+     *
+     * Real-time safe.
+     */
+    void allNotesOff();
+
+    /**
+     * @brief Set master gain
+     * @param gain Master gain (0-2, linear)
+     *
+     * Smoothed to prevent clicks.
+     */
+    void setMasterGain(float gain);
+
+    /**
+     * @brief Set attack time
+     * @param attackTime Attack time in seconds (0.001-1.0)
+     *
+     * Smoothed to prevent clicks.
+     */
+    void setAttackTime(float attackTime);
+
+    /**
+     * @brief Set release time
+     * @param releaseTime Release time in seconds (0.001-2.0)
+     *
+     * Smoothed to prevent clicks.
+     */
+    void setReleaseTime(float releaseTime);
+
+    /**
+     * @brief Set vibrato rate
+     * @param rate Vibrato rate in Hz (0-20)
+     *
+     * Smoothed to prevent clicks.
+     */
+    void setVibratoRate(float rate);
+
+    /**
+     * @brief Set vibrato depth
+     * @param depth Vibrato depth (0-1)
+     *
+     * Smoothed to prevent clicks.
+     */
+    void setVibratoDepth(float depth);
+
+    /**
+     * @brief Get voice instance
+     * @param voiceId Voice ID
+     * @return Voice pointer, or nullptr if invalid
+     *
+     * Returns pointer to internal voice instance.
+     * Pointer valid only during audio callback.
+     * Do not store pointer across callbacks.
+     */
+    VoiceInstance* getVoice(int voiceId);
+
+    /**
+     * @brief Get active voice count
+     * @return Number of active voices
      */
     int getActiveVoiceCount() const;
 
     /**
-     * @brief Get number of idle voices
+     * @brief Get maximum voice count
+     * @return Maximum number of voices
      */
-    int getIdleVoiceCount() const;
+    int getMaxVoices() const;
 
     /**
-     * @brief Update voice states (call each audio block)
-     * @param delta_time Time since last update (seconds)
+     * @brief Get performance statistics
+     * @return Performance statistics
      */
-    void updateStates(double delta_time);
+    const VoiceManagerStats& getStats() const;
 
     /**
-     * @brief Set CPU limit for voice stealing
-     * @param cpu_limit CPU usage limit (0-1)
+     * @brief Reset statistics
+     *
+     * Resets performance tracking counters.
      */
-    void setCPULimit(float cpu_limit);
-
-    /**
-     * @brief Get voice stealing statistics
-     */
-    struct StealingStats {
-        int total_stolen;           // Total voices stolen
-        int high_priority_stolen;   // High-priority voices stolen (bad)
-        int low_priority_stolen;    // Low-priority voices stolen (OK)
-    };
-    StealingStats getStealingStats() const;
+    void resetStats();
 
 private:
-    std::vector<std::unique_ptr<Voice>> voices_;
-    std::queue<int> free_voice_queue_;
-
-    float cpu_limit_;
-    StealingStats stealing_stats_;
-
     // Voice allocation
-    VoiceAllocation allocateFreeVoice(
-        VoicePriority priority,
-        float frequency,
-        float amplitude
-    );
+    std::unique_ptr<VoiceAllocator> allocator_;
+    std::vector<std::unique_ptr<VoiceInstance>> voices_;
+    int maxVoices_;
 
-    VoiceAllocation stealVoice(
-        VoicePriority priority,
-        float frequency,
-        float amplitude
-    );
+    // Audio processing
+    double sampleRate_;
+    int maxBlockSize_;
 
-    int findStealCandidate(VoicePriority priority) const;
-    bool shouldSteal() const;
+    // Pre-allocated scratch buffer for voice processing (real-time safe)
+    std::vector<float> scratchBuffer_;
+
+    // Parameter smoothing (placeholders for future LinearSmoother integration)
+    std::unique_ptr<VoiceParameters> currentParams_;
+    std::unique_ptr<VoiceParameters> targetParams_;
+
+    // Statistics
+    VoiceManagerStats stats_;
+    std::atomic<float> peakCpuUsage_;
+
+    // SIMD batch processing
+    /**
+     * @brief Build SIMD batches from active voices
+     * @param batches Output array of batches
+     * @param maxBatches Maximum number of batches
+     * @return Number of batches created
+     *
+     * Groups active voices into batches of up to 8 for SIMD processing.
+     * Real-time safe: No allocation, uses pre-allocated batch array.
+     */
+    int buildSIMDBatches(SIMDBatch* batches, int maxBatches);
+
+    /**
+     * @brief Process single voice
+     * @param voice Voice to process
+     * @param outputLeft Left output buffer
+     * @param outputRight Right output buffer
+     * @param numSamples Number of samples to process
+     *
+     * Processes a single voice and mixes to output.
+     * Placeholder for future synthesis integration.
+     *
+     * Real-time safe: Uses pre-allocated scratch buffer.
+     */
+    void processVoice(VoiceInstance* voice,
+                      float* outputLeft,
+                      float* outputRight,
+                      int numSamples);
+
+    /**
+     * @brief Process SIMD batch of voices
+     * @param batch SIMD batch to process
+     * @param outputLeft Left output buffer
+     * @param outputRight Right output buffer
+     * @param numSamples Number of samples to process
+     *
+     * Processes multiple voices using SIMD operations.
+     * Currently processes voices sequentially (placeholder for SIMD).
+     *
+     * Real-time safe.
+     */
+    void processSIMDBatch(const SIMDBatch& batch,
+                          float* outputLeft,
+                          float* outputRight,
+                          int numSamples);
+
+    /**
+     * @brief Update voice envelopes
+     * @param voice Voice to update
+     * @param numSamples Number of samples processed
+     *
+     * Updates attack/release envelopes for voice.
+     * Handles voice state transitions (active -> release -> inactive).
+     *
+     * Real-time safe.
+     */
+    void updateEnvelope(VoiceInstance* voice, int numSamples);
+
+    /**
+     * @brief Apply pan to stereo outputs
+     * @param input Input sample
+     * @param pan Pan position (-1 to 1)
+     * @param leftGain Output left gain
+     * @param rightGain Output right gain
+     *
+     * Calculates equal-power pan gains.
+     * Pan law: -3dB at center.
+     *
+     * Real-time safe.
+     */
+    void applyPan(float input, float pan, float& leftGain, float& rightGain);
+
+    /**
+     * @brief Update parameter smoothing
+     *
+     * Interpolates current parameters toward target parameters.
+     * Called every audio callback.
+     *
+     * Real-time safe.
+     */
+    void updateParameterSmoothing();
+
+    /**
+     * @brief Find voice by MIDI note
+     * @param midiNote MIDI note number
+     * @return Voice ID, or -1 if not found
+     *
+     * Finds active voice matching MIDI note.
+     * Returns first matching voice if multiple exist.
+     *
+     * Real-time safe.
+     */
+    int findVoiceByNote(int midiNote);
+
+    /**
+     * @brief Generate sine wave for voice
+     * @param voice Voice to generate for
+     * @param output Output buffer (pre-allocated)
+     * @param numSamples Number of samples to generate
+     *
+     * Placeholder synthesis: Simple sine wave.
+     * Will be replaced by FormantSynthesis/SubharmonicSynthesis.
+     *
+     * Real-time safe: No allocation.
+     */
+    void generateSineWave(VoiceInstance* voice, float* output, int numSamples);
 };
 
 } // namespace ChoirV2
