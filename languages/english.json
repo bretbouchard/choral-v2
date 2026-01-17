@@ -1,0 +1,45 @@
+{
+  "name": "English (US)",
+  "code": "en",
+  "region": "US",
+  "version": "1.0",
+
+  "phonemes": [
+    "i", "ɪ", "eɪ", "ɛ", "æ", "ɑ", "ɔ", "oʊ", "ʊ", "u",
+    "ə", "ɚ", "aɪ", "aʊ", "ɔɪ", "eə", "ɪə", "ʊə",
+    "p", "b", "t", "d", "k", "g", "f", "v", "θ", "ð",
+    "s", "z", "ʃ", "ʒ", "h", "tʃ", "dʒ", "m", "n", "ŋ",
+    "l", "ɹ", "w", "j", "ɾ"
+  ],
+
+  "syllable_structure": "(C)V(C)",
+  "onset_clusters": ["pl", "bl", "kl", "gl", "pr", "br", "tr", "dr", "kr", "gr"],
+  "coda_clusters": ["kt", "pt", "ft", "ld", "nd", "nz", "st", "sp"],
+
+  "speech_rate": 4.5,
+  "pause_duration": 0.2,
+
+  "test_words": ["hello", "world", "choir", "synthesis"],
+  "test_phrases": ["Hello world", "The quick brown fox"],
+
+  "phoneme_details": {
+    "ə": {
+      "symbol": "ə",
+      "name": "schwa",
+      "category": "vowel",
+      "f1": 500,
+      "f2": 1500,
+      "f3": 2500,
+      "b1": 80,
+      "b2": 100,
+      "b3": 120,
+      "min_duration": 0.05,
+      "max_duration": 0.2,
+      "default_duration": 0.1,
+      "transition_time": 0.03,
+      "spectral_continuity": 0.8,
+      "voiced": true,
+      "pitch_mod": 0.1
+    }
+  }
+}

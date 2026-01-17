@@ -1,0 +1,43 @@
+# Build artifacts
+.build/
+build/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Beads
+.beads/*.db
+.beads/*.db-journal
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# JUCE
+JUCE/
+
+# Test results
+Testing/
+tests/test_data/
+
+# Compiled files
+*.obj
+*.exe
+*.out
+*.app
