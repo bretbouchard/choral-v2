@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "name": "French 1: Chorale Francaise",
+    "author": "Bret Bouchard",
+    "description": "French romantic chorale style",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "french",
+      "chorale",
+      "romantic",
+      "ensemble"
+    ],
+    "created_date": "2026-01-17T18:32:01.235668",
+    "modified_date": "2026-01-17T18:32:01.235669",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 24,
+    "master_gain": -3.0,
+    "language": "french",
+    "lyrics": "ah eh ee oh oo",
+    "synthesis_method": "formant",
+    "formant_mix": 96,
+    "subharmonic_mix": 4,
+    "stereo_width": 78,
+    "vibrato_rate": 5.8,
+    "vibrato_depth": 24,
+    "reverb_mix": 28,
+    "reverb_size": 48,
+    "attack_time": 48,
+    "release_time": 210,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 11,
+    "timing_variation": 5,
+    "formant_variation": 15,
+    "breathiness": 11,
+    "warmth": 46,
+    "brightness": 58
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

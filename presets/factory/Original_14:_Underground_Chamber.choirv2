@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "name": "Original 14: Underground Chamber",
+    "author": "Bret Bouchard",
+    "description": "Cave-like environment with tight reflections",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "original",
+      "cave",
+      "underground",
+      "intimate",
+      "english"
+    ],
+    "created_date": "2026-01-17T18:31:34.782965",
+    "modified_date": "2026-01-17T18:31:34.782966",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 6,
+    "master_gain": -3.0,
+    "language": "english",
+    "lyrics": "ah oh oo",
+    "synthesis_method": "formant",
+    "formant_mix": 95,
+    "subharmonic_mix": 5,
+    "stereo_width": 45,
+    "vibrato_rate": 4.0,
+    "vibrato_depth": 18,
+    "reverb_mix": 30,
+    "reverb_size": 25,
+    "attack_time": 40,
+    "release_time": 120,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 6,
+    "timing_variation": 4,
+    "formant_variation": 15,
+    "breathiness": 8,
+    "warmth": 45,
+    "brightness": 50
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

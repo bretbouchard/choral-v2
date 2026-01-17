@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "name": "Original 11: Digital Dreams",
+    "author": "Bret Bouchard",
+    "description": "Glitchy electronic vocal synthesis",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "original",
+      "digital",
+      "electronic",
+      "glitch",
+      "synth"
+    ],
+    "created_date": "2026-01-17T18:31:34.782956",
+    "modified_date": "2026-01-17T18:31:34.782957",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 8,
+    "master_gain": -3.0,
+    "language": "english",
+    "lyrics": "ah ee ih oh oo",
+    "synthesis_method": "formant",
+    "formant_mix": 100,
+    "subharmonic_mix": 0,
+    "stereo_width": 70,
+    "vibrato_rate": 10.0,
+    "vibrato_depth": 15,
+    "reverb_mix": 20,
+    "reverb_size": 35,
+    "attack_time": 5,
+    "release_time": 80,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 2,
+    "timing_variation": 1,
+    "formant_variation": 3,
+    "breathiness": 5,
+    "warmth": 15,
+    "brightness": 90
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

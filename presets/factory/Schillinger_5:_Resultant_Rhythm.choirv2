@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "name": "Schillinger 5: Resultant Rhythm",
+    "author": "Bret Bouchard",
+    "description": "Resultant rhythm from 3:2 polyrhythm",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "schillinger",
+      "polyrhythm",
+      "throat-singing",
+      "subharmonic"
+    ],
+    "created_date": "2026-01-17T18:31:34.782904",
+    "modified_date": "2026-01-17T18:31:34.782905",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 12,
+    "master_gain": -3.0,
+    "language": "throat_singing",
+    "lyrics": "oh oh oh oh oh",
+    "synthesis_method": "subharmonic",
+    "formant_mix": 30,
+    "subharmonic_mix": 70,
+    "stereo_width": 90,
+    "vibrato_rate": 3.0,
+    "vibrato_depth": 40,
+    "reverb_mix": 35,
+    "reverb_size": 65,
+    "attack_time": 80,
+    "release_time": 300,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 5,
+    "timing_variation": 2,
+    "formant_variation": 20,
+    "breathiness": 15,
+    "warmth": 45,
+    "brightness": 35
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

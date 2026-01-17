@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "name": "Hebrew 1: Synagogue Chant",
+    "author": "Bret Bouchard",
+    "description": "Traditional Jewish synagogue chanting",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "hebrew",
+      "synagogue",
+      "jewish",
+      "chant",
+      "traditional"
+    ],
+    "created_date": "2026-01-17T18:32:01.235657",
+    "modified_date": "2026-01-17T18:32:01.235658",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 8,
+    "master_gain": -3.0,
+    "language": "hebrew",
+    "lyrics": "ah eh ee oh",
+    "synthesis_method": "formant",
+    "formant_mix": 98,
+    "subharmonic_mix": 2,
+    "stereo_width": 60,
+    "vibrato_rate": 4.8,
+    "vibrato_depth": 16,
+    "reverb_mix": 32,
+    "reverb_size": 55,
+    "attack_time": 85,
+    "release_time": 320,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 6,
+    "timing_variation": 4,
+    "formant_variation": 15,
+    "breathiness": 14,
+    "warmth": 52,
+    "brightness": 40
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "name": "Arabic 1: Quran Recitation",
+    "author": "Bret Bouchard",
+    "description": "Traditional Quranic recitation style",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "arabic",
+      "quran",
+      "recitation",
+      "traditional",
+      "islamic"
+    ],
+    "created_date": "2026-01-17T18:32:01.235647",
+    "modified_date": "2026-01-17T18:32:01.235653",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 4,
+    "master_gain": -3.0,
+    "language": "arabic",
+    "lyrics": "ah eh ee oh oo",
+    "synthesis_method": "formant",
+    "formant_mix": 100,
+    "subharmonic_mix": 0,
+    "stereo_width": 50,
+    "vibrato_rate": 5.0,
+    "vibrato_depth": 18,
+    "reverb_mix": 35,
+    "reverb_size": 60,
+    "attack_time": 70,
+    "release_time": 300,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 5,
+    "timing_variation": 3,
+    "formant_variation": 15,
+    "breathiness": 12,
+    "warmth": 55,
+    "brightness": 45
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

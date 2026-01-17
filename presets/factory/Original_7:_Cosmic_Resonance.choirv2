@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "name": "Original 7: Cosmic Resonance",
+    "author": "Bret Bouchard",
+    "description": "Space-themed ambient with Klingon and subharmonics",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "original",
+      "cosmic",
+      "space",
+      "klingon",
+      "ambient"
+    ],
+    "created_date": "2026-01-17T18:31:34.782943",
+    "modified_date": "2026-01-17T18:31:34.782944",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 16,
+    "master_gain": -3.0,
+    "language": "klingon",
+    "lyrics": "vadh ghgh qlIj",
+    "synthesis_method": "subharmonic",
+    "formant_mix": 30,
+    "subharmonic_mix": 70,
+    "stereo_width": 100,
+    "vibrato_rate": 2.5,
+    "vibrato_depth": 30,
+    "reverb_mix": 55,
+    "reverb_size": 95,
+    "attack_time": 150,
+    "release_time": 700,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 25,
+    "timing_variation": 12,
+    "formant_variation": 18,
+    "breathiness": 20,
+    "warmth": 55,
+    "brightness": 50
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

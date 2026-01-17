@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "name": "Original 2: Alien Chorus",
+    "author": "Bret Bouchard",
+    "description": "Otherworldly harmonies using Klingon",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "original",
+      "alien",
+      "klingon",
+      "sci-fi",
+      "harmonies"
+    ],
+    "created_date": "2026-01-17T18:31:34.782928",
+    "modified_date": "2026-01-17T18:31:34.782929",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 12,
+    "master_gain": -3.0,
+    "language": "klingon",
+    "lyrics": "ghgh vadh qlIj ghgh vadh",
+    "synthesis_method": "diphone",
+    "formant_mix": 70,
+    "subharmonic_mix": 30,
+    "stereo_width": 85,
+    "vibrato_rate": 7.5,
+    "vibrato_depth": 35,
+    "reverb_mix": 40,
+    "reverb_size": 60,
+    "attack_time": 40,
+    "release_time": 250,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 18,
+    "timing_variation": 8,
+    "formant_variation": 20,
+    "breathiness": 15,
+    "warmth": 30,
+    "brightness": 70
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

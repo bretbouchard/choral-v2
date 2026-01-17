@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "name": "English 3: Barbershop Quartet",
+    "author": "Bret Bouchard",
+    "description": "Close-harmony barbershop style",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "english",
+      "barbershop",
+      "quartet",
+      "harmony"
+    ],
+    "created_date": "2026-01-17T18:31:34.782977",
+    "modified_date": "2026-01-17T18:31:34.782978",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 4,
+    "master_gain": -3.0,
+    "language": "english",
+    "lyrics": "ah-eh ee-oh",
+    "synthesis_method": "diphone",
+    "formant_mix": 95,
+    "subharmonic_mix": 5,
+    "stereo_width": 60,
+    "vibrato_rate": 6.5,
+    "vibrato_depth": 28,
+    "reverb_mix": 10,
+    "reverb_size": 25,
+    "attack_time": 25,
+    "release_time": 150,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 5,
+    "timing_variation": 3,
+    "formant_variation": 15,
+    "breathiness": 8,
+    "warmth": 45,
+    "brightness": 50
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

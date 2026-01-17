@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "name": "Original 9: Quantum Choir",
+    "author": "Bret Bouchard",
+    "description": "Experimental microtonal harmonies",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "original",
+      "quantum",
+      "experimental",
+      "microtonal",
+      "klingon"
+    ],
+    "created_date": "2026-01-17T18:31:34.782949",
+    "modified_date": "2026-01-17T18:31:34.782950",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 24,
+    "master_gain": -3.0,
+    "language": "klingon",
+    "lyrics": "ghgh vadh qlIj",
+    "synthesis_method": "formant",
+    "formant_mix": 80,
+    "subharmonic_mix": 20,
+    "stereo_width": 90,
+    "vibrato_rate": 8.0,
+    "vibrato_depth": 40,
+    "reverb_mix": 35,
+    "reverb_size": 50,
+    "attack_time": 25,
+    "release_time": 200,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 30,
+    "timing_variation": 15,
+    "formant_variation": 30,
+    "breathiness": 10,
+    "warmth": 35,
+    "brightness": 75
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

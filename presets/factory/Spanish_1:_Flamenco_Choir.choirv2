@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "name": "Spanish 1: Flamenco Choir",
+    "author": "Bret Bouchard",
+    "description": "Traditional flamenco cantaor voices",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "spanish",
+      "flamenco",
+      "cantaor",
+      "traditional",
+      "passionate"
+    ],
+    "created_date": "2026-01-17T18:32:01.235665",
+    "modified_date": "2026-01-17T18:32:01.235665",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 6,
+    "master_gain": -3.0,
+    "language": "spanish",
+    "lyrics": "ah-eh ee-oh oh-ay",
+    "synthesis_method": "diphone",
+    "formant_mix": 94,
+    "subharmonic_mix": 6,
+    "stereo_width": 68,
+    "vibrato_rate": 7.2,
+    "vibrato_depth": 32,
+    "reverb_mix": 15,
+    "reverb_size": 30,
+    "attack_time": 20,
+    "release_time": 140,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 10,
+    "timing_variation": 5,
+    "formant_variation": 15,
+    "breathiness": 8,
+    "warmth": 48,
+    "brightness": 65
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

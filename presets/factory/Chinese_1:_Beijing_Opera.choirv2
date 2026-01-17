@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "name": "Chinese 1: Beijing Opera",
+    "author": "Bret Bouchard",
+    "description": "Traditional Beijing opera style",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "chinese",
+      "beijing-opera",
+      "traditional",
+      "dramatic"
+    ],
+    "created_date": "2026-01-17T18:31:34.783015",
+    "modified_date": "2026-01-17T18:31:34.783016",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 6,
+    "master_gain": -3.0,
+    "language": "chinese",
+    "lyrics": "ah ee ih oh",
+    "synthesis_method": "formant",
+    "formant_mix": 98,
+    "subharmonic_mix": 2,
+    "stereo_width": 55,
+    "vibrato_rate": 8.0,
+    "vibrato_depth": 35,
+    "reverb_mix": 20,
+    "reverb_size": 35,
+    "attack_time": 30,
+    "release_time": 180,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 8,
+    "timing_variation": 4,
+    "formant_variation": 15,
+    "breathiness": 10,
+    "warmth": 40,
+    "brightness": 75
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

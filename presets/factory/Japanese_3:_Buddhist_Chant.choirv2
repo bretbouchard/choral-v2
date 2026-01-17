@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "name": "Japanese 3: Buddhist Chant",
+    "author": "Bret Bouchard",
+    "description": "Zen Buddhist sutra chanting",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "japanese",
+      "buddhist",
+      "zen",
+      "chant",
+      "meditation"
+    ],
+    "created_date": "2026-01-17T18:31:34.783012",
+    "modified_date": "2026-01-17T18:31:34.783013",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 12,
+    "master_gain": -3.0,
+    "language": "japanese",
+    "lyrics": "ah eh ee oh oo",
+    "synthesis_method": "formant",
+    "formant_mix": 100,
+    "subharmonic_mix": 0,
+    "stereo_width": 65,
+    "vibrato_rate": 3.8,
+    "vibrato_depth": 12,
+    "reverb_mix": 40,
+    "reverb_size": 70,
+    "attack_time": 100,
+    "release_time": 400,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 6,
+    "timing_variation": 4,
+    "formant_variation": 15,
+    "breathiness": 15,
+    "warmth": 60,
+    "brightness": 35
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

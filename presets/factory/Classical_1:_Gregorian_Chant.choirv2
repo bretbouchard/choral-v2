@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "name": "Classical 1: Gregorian Chant",
+    "author": "Bret Bouchard",
+    "description": "Traditional monophonic Gregorian chant",
+    "version": "2.0.0",
+    "category": "Factory",
+    "tags": [
+      "classical",
+      "gregorian",
+      "chant",
+      "latin",
+      "reverb"
+    ],
+    "created_date": "2026-01-17T18:31:34.782907",
+    "modified_date": "2026-01-17T18:31:34.782908",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 12,
+    "master_gain": -3.0,
+    "language": "latin",
+    "lyrics": "ah-eh-ee-oh-oo",
+    "synthesis_method": "formant",
+    "formant_mix": 100,
+    "subharmonic_mix": 0,
+    "stereo_width": 50,
+    "vibrato_rate": 4.0,
+    "vibrato_depth": 10,
+    "reverb_mix": 40,
+    "reverb_size": 80,
+    "attack_time": 100,
+    "release_time": 400,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 5,
+    "timing_variation": 3,
+    "formant_variation": 5,
+    "breathiness": 20,
+    "warmth": 50,
+    "brightness": 30
+  },
+  "is_factory": true,
+  "is_read_only": true
+}
