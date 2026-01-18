@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "name": "Mixed 7: Gospel Choir",
+    "author": "Bret Bouchard",
+    "description": "Energetic gospel choir with female lead",
+    "version": "2.0.0",
+    "category": "Gender",
+    "tags": [
+      "mixed",
+      "gospel",
+      "energetic",
+      "soul",
+      "female-heavy"
+    ],
+    "created_date": "2026-01-17T19:28:43.830397",
+    "modified_date": "2026-01-17T19:28:43.830398",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 24,
+    "master_gain": -3.0,
+    "language": "english",
+    "lyrics": "ah-eh ee-oh oh-ay",
+    "synthesis_method": "diphone",
+    "formant_mix": 95,
+    "subharmonic_mix": 5,
+    "stereo_width": 90,
+    "vibrato_rate": 7.0,
+    "vibrato_depth": 35,
+    "reverb_mix": 30,
+    "reverb_size": 55,
+    "attack_time": 35,
+    "release_time": 180,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 18,
+    "timing_variation": 8,
+    "formant_variation": 15,
+    "breathiness": 15,
+    "warmth": 45,
+    "brightness": 70,
+    "gender_balance": {
+      "male": 35,
+      "female": 65
+    },
+    "voice_types": {
+      "soprano": 40,
+      "alto": 30,
+      "tenor": 20,
+      "bass": 10
+    }
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

@@ -1,0 +1,55 @@
+{
+  "metadata": {
+    "name": "Mixed 8: Barbershop Mixed",
+    "author": "Bret Bouchard",
+    "description": "Mixed gender barbershop harmony",
+    "version": "2.0.0",
+    "category": "Gender",
+    "tags": [
+      "mixed",
+      "barbershop",
+      "harmony",
+      "close-harmony"
+    ],
+    "created_date": "2026-01-17T19:28:43.830400",
+    "modified_date": "2026-01-17T19:28:43.830401",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 4,
+    "master_gain": -3.0,
+    "language": "english",
+    "lyrics": "ah-eh ee-oh",
+    "synthesis_method": "diphone",
+    "formant_mix": 98,
+    "subharmonic_mix": 2,
+    "stereo_width": 70,
+    "vibrato_rate": 6.5,
+    "vibrato_depth": 30,
+    "reverb_mix": 10,
+    "reverb_size": 25,
+    "attack_time": 25,
+    "release_time": 150,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 6,
+    "timing_variation": 3,
+    "formant_variation": 15,
+    "breathiness": 8,
+    "warmth": 50,
+    "brightness": 60,
+    "gender_balance": {
+      "male": 75,
+      "female": 25
+    },
+    "voice_types": {
+      "tenor": 25,
+      "lead": 25,
+      "baritone": 25,
+      "bass": 25
+    }
+  },
+  "is_factory": true,
+  "is_read_only": true
+}

@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "name": "Mixed 5: Chamber Choir",
+    "author": "Bret Bouchard",
+    "description": "Intimate chamber choir with refined blend",
+    "version": "2.0.0",
+    "category": "Gender",
+    "tags": [
+      "mixed",
+      "chamber",
+      "intimate",
+      "refined",
+      "choir"
+    ],
+    "created_date": "2026-01-17T19:28:43.830390",
+    "modified_date": "2026-01-17T19:28:43.830391",
+    "plugin_version": "2.0.0"
+  },
+  "parameters": {
+    "num_voices": 12,
+    "master_gain": -3.0,
+    "language": "english",
+    "lyrics": "ah-eh ee-oh oh-oo",
+    "synthesis_method": "diphone",
+    "formant_mix": 100,
+    "subharmonic_mix": 0,
+    "stereo_width": 75,
+    "vibrato_rate": 6.0,
+    "vibrato_depth": 24,
+    "reverb_mix": 28,
+    "reverb_size": 50,
+    "attack_time": 45,
+    "release_time": 200,
+    "enable_anti_aliasing": true,
+    "enable_spectral_enhancement": true,
+    "oversampling_factor": 1.0,
+    "pitch_variation": 10,
+    "timing_variation": 5,
+    "formant_variation": 12,
+    "breathiness": 8,
+    "warmth": 45,
+    "brightness": 55,
+    "gender_balance": {
+      "male": 48,
+      "female": 52
+    },
+    "voice_types": {
+      "soprano": 30,
+      "alto": 25,
+      "tenor": 25,
+      "bass": 20
+    }
+  },
+  "is_factory": true,
+  "is_read_only": true
+}
