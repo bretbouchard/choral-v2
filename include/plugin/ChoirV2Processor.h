@@ -32,10 +32,20 @@ public:
     //==============================================================================
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }
-    void setCurrentProgram(int index) override {}
+    void setCurrentProgram(int index) override
+    {
+        (void)index;
+    }
 
-    const juce::String getProgramName(int index) override { return {}; }
-    void changeProgramName(int index, const juce::String& name) override {}
+    const juce::String getProgramName(int index) override
+    {
+        (void)index;
+        return {};
+    }
+    void changeProgramName(int index, const juce::String& name) override
+    {
+        (void)index; (void)name;
+    }
 
     //==============================================================================
     void getStateInformation(juce::MemoryBlock& destData) override;

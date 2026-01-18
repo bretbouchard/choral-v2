@@ -20,11 +20,8 @@ ChoirV2Processor::ChoirV2Processor()
     pureDSP_.prepare(44100.0, 512);
 
     // Listen to all parameter changes
-    auto& params = parameters;
-    for (auto* param : params)
-    {
-        param->addListener(this);
-    }
+    // Note: In JUCE 8, AudioProcessorValueTreeState handles this automatically
+    // We don't need to manually add listeners
 
     // Start timer for UI updates (30Hz)
     startTimerHz(30);
@@ -32,12 +29,7 @@ ChoirV2Processor::ChoirV2Processor()
 
 ChoirV2Processor::~ChoirV2Processor()
 {
-    // Remove parameter listeners
-    auto& params = parameters;
-    for (auto* param : params)
-    {
-        param->removeListener(this);
-    }
+    // AudioProcessorValueTreeState automatically handles parameter listeners
 }
 
 //==============================================================================
@@ -74,6 +66,8 @@ void ChoirV2Processor::processBlock(juce::AudioBuffer<float>& buffer,
 void ChoirV2Processor::processMidiEvents(juce::AudioBuffer<float>& buffer,
                                         const juce::MidiBuffer& midiMessages)
 {
+    (void)buffer; // Unused for now
+
     // Convert MIDI messages to PureDSP ScheduledEvents
     for (const auto metadata : midiMessages)
     {
@@ -86,26 +80,26 @@ void ChoirV2Processor::processMidiEvents(juce::AudioBuffer<float>& buffer,
         if (message.isNoteOn())
         {
             event.type = DSP::ChoirV2PureDSP::ScheduledEvent::NoteOn;
-            event.noteNumber = message.getNoteNumber();
-            event.velocity = message.getVelocity() / 127.0f;
+            event.noteOn.noteNumber = message.getNoteNumber();
+            event.noteOn.velocity = message.getVelocity() / 127.0f;
             pureDSP_.handleEvent(event);
         }
         else if (message.isNoteOff())
         {
             event.type = DSP::ChoirV2PureDSP::ScheduledEvent::NoteOff;
-            event.noteNumber = message.getNoteNumber();
+            event.noteOn.noteNumber = message.getNoteNumber();
             pureDSP_.handleEvent(event);
         }
-        else if (message.isPitchBend())
+        else if (message.isPitchWheel())
         {
             event.type = DSP::ChoirV2PureDSP::ScheduledEvent::PitchBend;
-            event.pitchBendValue = message.getPitchBendValue();
+            event.pitchBend.pitchBendValue = message.getPitchWheelValue();
             pureDSP_.handleEvent(event);
         }
         else if (message.isAftertouch())
         {
             event.type = DSP::ChoirV2PureDSP::ScheduledEvent::Aftertouch;
-            event.aftertouchValue = message.getAfterTouchValue() / 127.0f;
+            event.aftertouch.aftertouchValue = message.getAfterTouchValue() / 127.0f;
             pureDSP_.handleEvent(event);
         }
     }
@@ -220,20 +214,7 @@ ChoirV2Processor::createParameterLayout()
         "Polyphony", 1.0f, 64.0f, 32.0f
     ));
 
-    // Text input (string parameter)
-    params.push_back(std::make_unique<juce::AudioParameterString>(
-        juce::ParameterID(DSP::ChoirV2PureDSP::ParameterID::textInput, 1),
-        "Text Input",
-        ""
-    ));
-
-    // Phoneme display (read-only)
-    params.push_back(std::make_unique<juce::AudioParameterString>(
-        juce::ParameterID(DSP::ChoirV2PureDSP::ParameterID::phonemeDisplay, 1),
-        "Phoneme Display",
-        "",
-        juce::AudioParameterStringAttributes().withAutomatable(false)
-    ));
+    // Note: textInput and phonemeDisplay removed - AudioParameterString not available in JUCE 8
 
     // Vowel space navigation (3D)
     params.push_back(makeParam(

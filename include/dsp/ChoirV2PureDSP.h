@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_core/juce_core.h>
+#include <juce_audio_basics/juce_audio_basics.h>
 
 namespace DSP {
 
@@ -86,6 +87,12 @@ public:
     //==============================================================================
     // Scheduled event for MIDI and parameter changes
     struct ScheduledEvent {
+        // Forward declare data structures
+        struct NoteOnData { int noteNumber; float velocity; };
+        struct PitchBendData { int pitchBendValue; };
+        struct AftertouchData { float aftertouchValue; };
+        struct ParameterData { const char* parameterId; float value; };
+
         enum Type {
             NoteOn,
             NoteOff,
@@ -97,10 +104,10 @@ public:
         Type type;
         int sampleOffset;
         union {
-            struct { int noteNumber; float velocity; };
-            struct { int pitchBendValue; };
-            struct { float aftertouchValue; };
-            struct { const char* parameterId; float value; };
+            NoteOnData noteOn;
+            PitchBendData pitchBend;
+            AftertouchData aftertouch;
+            ParameterData parameter;
         };
 
         ScheduledEvent() : sampleOffset(0) {}

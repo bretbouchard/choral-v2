@@ -1,4 +1,4 @@
-#include "ChoirV2Editor.h"
+#include "plugin/ChoirV2Editor.h"
 
 //==============================================================================
 class ChoirV2LookAndFeel : public juce::LookAndFeel_V4
@@ -35,7 +35,7 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     setSize(1000, 900);
 
     // Initialize all UI components
-    auto& params = processorRef.getParameterTree();
+    auto& params = processorRef.getValueTreeState();
 
     //==========================================================================
     // MASTER SECTION
@@ -47,24 +47,24 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     masterVolumeSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     masterVolumeSlider->setRange(0.0, 1.0, 0.001);
     masterVolumeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::MASTER_VOLUME_PARAM, *masterVolumeSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::masterVolume, *masterVolumeSlider);
     addAndMakeVisible(*masterVolumeSlider);
 
     masterVolumeLabel = std::make_unique<juce::Label>("MasterVolumeLabel", "Volume");
     masterVolumeLabel->attachToComponent(masterVolumeSlider.get(), false);
-    masterVolumeLabel->setJustification(juce::Justification::centred);
+    masterVolumeLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*masterVolumeLabel);
 
     // Polyphony
     polyphonySlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     polyphonySlider->setRange(1.0, 64.0, 1.0);
     polyphonyAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::POLYPHONY_PARAM, *polyphonySlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::polyphony, *polyphonySlider);
     addAndMakeVisible(*polyphonySlider);
 
     polyphonyLabel = std::make_unique<juce::Label>("PolyphonyLabel", "Voices");
     polyphonyLabel->attachToComponent(polyphonySlider.get(), false);
-    polyphonyLabel->setJustification(juce::Justification::centred);
+    polyphonyLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*polyphonyLabel);
 
     // Text Input
@@ -85,8 +85,8 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     addAndMakeVisible(*phonemeDisplayLabel);
 
     phonemeDisplayValue = std::make_unique<juce::Label>("PhonemeDisplayValue", "AH");
-    phonemeDisplayValue->setFont(juce::Font(24.0f, juce::Font::bold));
-    phonemeDisplayValue->setJustification(juce::Justification::centred);
+    phonemeDisplayValue->setFont(juce::Font(juce::FontOptions()));
+    phonemeDisplayValue->setJustificationType(juce::Justification::centred);
     phonemeDisplayValue->setColour(juce::Label::textColourId, juce::Colour(100, 200, 150));
     addAndMakeVisible(*phonemeDisplayValue);
 
@@ -99,7 +99,7 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     vowelXSlider = std::make_unique<juce::Slider>(juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight);
     vowelXSlider->setRange(-1.0, 1.0, 0.01);
     vowelXAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::VOWEL_X_PARAM, *vowelXSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::vowelX, *vowelXSlider);
     addAndMakeVisible(*vowelXSlider);
 
     vowelXLabel = std::make_unique<juce::Label>("VowelXLabel", "X (Front/Back)");
@@ -109,7 +109,7 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     vowelYSlider = std::make_unique<juce::Slider>(juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight);
     vowelYSlider->setRange(-1.0, 1.0, 0.01);
     vowelYAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::VOWEL_Y_PARAM, *vowelYSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::vowelY, *vowelYSlider);
     addAndMakeVisible(*vowelYSlider);
 
     vowelYLabel = std::make_unique<juce::Label>("VowelYLabel", "Y (Open/Closed)");
@@ -119,7 +119,7 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     vowelZSlider = std::make_unique<juce::Slider>(juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight);
     vowelZSlider->setRange(-1.0, 1.0, 0.01);
     vowelZAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::VOWEL_Z_PARAM, *vowelZSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::vowelZ, *vowelZSlider);
     addAndMakeVisible(*vowelZSlider);
 
     vowelZLabel = std::make_unique<juce::Label>("VowelZLabel", "Z (Rounded/Spread)");
@@ -135,23 +135,23 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     formantScaleSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     formantScaleSlider->setRange(0.5, 2.0, 0.01);
     formantScaleAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::FORMANT_SCALE_PARAM, *formantScaleSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::formantScale, *formantScaleSlider);
     addAndMakeVisible(*formantScaleSlider);
 
     formantScaleLabel = std::make_unique<juce::Label>("FormantScaleLabel", "Scale");
     formantScaleLabel->attachToComponent(formantScaleSlider.get(), false);
-    formantScaleLabel->setJustification(juce::Justification::centred);
+    formantScaleLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*formantScaleLabel);
 
     formantShiftSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     formantShiftSlider->setRange(-12.0, 12.0, 0.1);
     formantShiftAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::FORMANT_SHIFT_PARAM, *formantShiftSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::formantShift, *formantShiftSlider);
     addAndMakeVisible(*formantShiftSlider);
 
     formantShiftLabel = std::make_unique<juce::Label>("FormantShiftLabel", "Shift");
     formantShiftLabel->attachToComponent(formantShiftSlider.get(), false);
-    formantShiftLabel->setJustification(juce::Justification::centred);
+    formantShiftLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*formantShiftLabel);
 
     //==========================================================================
@@ -163,23 +163,23 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     breathMixSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     breathMixSlider->setRange(0.0, 1.0, 0.01);
     breathMixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::BREATH_MIX_PARAM, *breathMixSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::breathMix, *breathMixSlider);
     addAndMakeVisible(*breathMixSlider);
 
     breathMixLabel = std::make_unique<juce::Label>("BreathMixLabel", "Mix");
     breathMixLabel->attachToComponent(breathMixSlider.get(), false);
-    breathMixLabel->setJustification(juce::Justification::centred);
+    breathMixLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*breathMixLabel);
 
     breathColorSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     breathColorSlider->setRange(0.0, 1.0, 0.01);
     breathColorAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::BREATH_COLOR_PARAM, *breathColorSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::breathColor, *breathColorSlider);
     addAndMakeVisible(*breathColorSlider);
 
     breathColorLabel = std::make_unique<juce::Label>("BreathColorLabel", "Color");
     breathColorLabel->attachToComponent(breathColorSlider.get(), false);
-    breathColorLabel->setJustification(juce::Justification::centred);
+    breathColorLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*breathColorLabel);
 
     //==========================================================================
@@ -191,34 +191,34 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     vibratoRateSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     vibratoRateSlider->setRange(0.0, 10.0, 0.1);
     vibratoRateAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::VIBRATO_RATE_PARAM, *vibratoRateSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::vibratoRate, *vibratoRateSlider);
     addAndMakeVisible(*vibratoRateSlider);
 
     vibratoRateLabel = std::make_unique<juce::Label>("VibratoRateLabel", "Rate");
     vibratoRateLabel->attachToComponent(vibratoRateSlider.get(), false);
-    vibratoRateLabel->setJustification(juce::Justification::centred);
+    vibratoRateLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*vibratoRateLabel);
 
     vibratoDepthSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     vibratoDepthSlider->setRange(0.0, 1.0, 0.01);
     vibratoDepthAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::VIBRATO_DEPTH_PARAM, *vibratoDepthSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::vibratoDepth, *vibratoDepthSlider);
     addAndMakeVisible(*vibratoDepthSlider);
 
     vibratoDepthLabel = std::make_unique<juce::Label>("VibratoDepthLabel", "Depth");
     vibratoDepthLabel->attachToComponent(vibratoDepthSlider.get(), false);
-    vibratoDepthLabel->setJustification(juce::Justification::centred);
+    vibratoDepthLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*vibratoDepthLabel);
 
     vibratoDelaySlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     vibratoDelaySlider->setRange(0.0, 1.0, 0.01);
     vibratoDelayAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::VIBRATO_DELAY_PARAM, *vibratoDelaySlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::vibratoDelay, *vibratoDelaySlider);
     addAndMakeVisible(*vibratoDelaySlider);
 
     vibratoDelayLabel = std::make_unique<juce::Label>("VibratoDelayLabel", "Delay");
     vibratoDelayLabel->attachToComponent(vibratoDelaySlider.get(), false);
-    vibratoDelayLabel->setJustification(juce::Justification::centred);
+    vibratoDelayLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*vibratoDelayLabel);
 
     //==========================================================================
@@ -230,34 +230,34 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     tightnessSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     tightnessSlider->setRange(0.0, 1.0, 0.01);
     tightnessAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::TIGHTNESS_PARAM, *tightnessSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::tightness, *tightnessSlider);
     addAndMakeVisible(*tightnessSlider);
 
     tightnessLabel = std::make_unique<juce::Label>("TightnessLabel", "Tightness");
     tightnessLabel->attachToComponent(tightnessSlider.get(), false);
-    tightnessLabel->setJustification(juce::Justification::centred);
+    tightnessLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*tightnessLabel);
 
     ensembleSizeSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     ensembleSizeSlider->setRange(1.0, 32.0, 1.0);
     ensembleSizeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::ENSEMBLE_SIZE_PARAM, *ensembleSizeSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::ensembleSize, *ensembleSizeSlider);
     addAndMakeVisible(*ensembleSizeSlider);
 
     ensembleSizeLabel = std::make_unique<juce::Label>("EnsembleSizeLabel", "Size");
     ensembleSizeLabel->attachToComponent(ensembleSizeSlider.get(), false);
-    ensembleSizeLabel->setJustification(juce::Justification::centred);
+    ensembleSizeLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*ensembleSizeLabel);
 
     voiceSpreadSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     voiceSpreadSlider->setRange(0.0, 1.0, 0.01);
     voiceSpreadAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::VOICE_SPREAD_PARAM, *voiceSpreadSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::voiceSpread, *voiceSpreadSlider);
     addAndMakeVisible(*voiceSpreadSlider);
 
     voiceSpreadLabel = std::make_unique<juce::Label>("VoiceSpreadLabel", "Spread");
     voiceSpreadLabel->attachToComponent(voiceSpreadSlider.get(), false);
-    voiceSpreadLabel->setJustification(juce::Justification::centred);
+    voiceSpreadLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*voiceSpreadLabel);
 
     //==========================================================================
@@ -269,45 +269,45 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     attackSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     attackSlider->setRange(0.0, 2.0, 0.01);
     attackAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::ATTACK_PARAM, *attackSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::attack, *attackSlider);
     addAndMakeVisible(*attackSlider);
 
     attackLabel = std::make_unique<juce::Label>("AttackLabel", "A");
     attackLabel->attachToComponent(attackSlider.get(), false);
-    attackLabel->setJustification(juce::Justification::centred);
+    attackLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*attackLabel);
 
     decaySlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     decaySlider->setRange(0.0, 2.0, 0.01);
     decayAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::DECAY_PARAM, *decaySlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::decay, *decaySlider);
     addAndMakeVisible(*decaySlider);
 
     decayLabel = std::make_unique<juce::Label>("DecayLabel", "D");
     decayLabel->attachToComponent(decaySlider.get(), false);
-    decayLabel->setJustification(juce::Justification::centred);
+    decayLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*decayLabel);
 
     sustainSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     sustainSlider->setRange(0.0, 1.0, 0.01);
     sustainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::SUSTAIN_PARAM, *sustainSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::sustain, *sustainSlider);
     addAndMakeVisible(*sustainSlider);
 
     sustainLabel = std::make_unique<juce::Label>("SustainLabel", "S");
     sustainLabel->attachToComponent(sustainSlider.get(), false);
-    sustainLabel->setJustification(juce::Justification::centred);
+    sustainLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*sustainLabel);
 
     releaseSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     releaseSlider->setRange(0.01, 5.0, 0.01);
     releaseAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::RELEASE_PARAM, *releaseSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::release, *releaseSlider);
     addAndMakeVisible(*releaseSlider);
 
     releaseLabel = std::make_unique<juce::Label>("ReleaseLabel", "R");
     releaseLabel->attachToComponent(releaseSlider.get(), false);
-    releaseLabel->setJustification(juce::Justification::centred);
+    releaseLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*releaseLabel);
 
     //==========================================================================
@@ -319,45 +319,45 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     sopranoLevelSlider = std::make_unique<juce::Slider>(juce::Slider::LinearVertical, juce::Slider::TextBoxBelow);
     sopranoLevelSlider->setRange(0.0, 1.0, 0.01);
     sopranoLevelAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::SOPRANO_LEVEL_PARAM, *sopranoLevelSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::sopranoLevel, *sopranoLevelSlider);
     addAndMakeVisible(*sopranoLevelSlider);
 
     sopranoLevelLabel = std::make_unique<juce::Label>("SopranoLevelLabel", "Soprano");
     sopranoLevelLabel->attachToComponent(sopranoLevelSlider.get(), false);
-    sopranoLevelLabel->setJustification(juce::Justification::centred);
+    sopranoLevelLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*sopranoLevelLabel);
 
     altoLevelSlider = std::make_unique<juce::Slider>(juce::Slider::LinearVertical, juce::Slider::TextBoxBelow);
     altoLevelSlider->setRange(0.0, 1.0, 0.01);
     altoLevelAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::ALTO_LEVEL_PARAM, *altoLevelSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::altoLevel, *altoLevelSlider);
     addAndMakeVisible(*altoLevelSlider);
 
     altoLevelLabel = std::make_unique<juce::Label>("AltoLevelLabel", "Alto");
     altoLevelLabel->attachToComponent(altoLevelSlider.get(), false);
-    altoLevelLabel->setJustification(juce::Justification::centred);
+    altoLevelLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*altoLevelLabel);
 
     tenorLevelSlider = std::make_unique<juce::Slider>(juce::Slider::LinearVertical, juce::Slider::TextBoxBelow);
     tenorLevelSlider->setRange(0.0, 1.0, 0.01);
     tenorLevelAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::TENOR_LEVEL_PARAM, *tenorLevelSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::tenorLevel, *tenorLevelSlider);
     addAndMakeVisible(*tenorLevelSlider);
 
     tenorLevelLabel = std::make_unique<juce::Label>("TenorLevelLabel", "Tenor");
     tenorLevelLabel->attachToComponent(tenorLevelSlider.get(), false);
-    tenorLevelLabel->setJustification(juce::Justification::centred);
+    tenorLevelLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*tenorLevelLabel);
 
     bassLevelSlider = std::make_unique<juce::Slider>(juce::Slider::LinearVertical, juce::Slider::TextBoxBelow);
     bassLevelSlider->setRange(0.0, 1.0, 0.01);
     bassLevelAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::BASS_LEVEL_PARAM, *bassLevelSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::bassLevel, *bassLevelSlider);
     addAndMakeVisible(*bassLevelSlider);
 
     bassLevelLabel = std::make_unique<juce::Label>("BassLevelLabel", "Bass");
     bassLevelLabel->attachToComponent(bassLevelSlider.get(), false);
-    bassLevelLabel->setJustification(juce::Justification::centred);
+    bassLevelLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*bassLevelLabel);
 
     //==========================================================================
@@ -369,34 +369,34 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     reverbMixSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     reverbMixSlider->setRange(0.0, 1.0, 0.01);
     reverbMixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::REVERB_MIX_PARAM, *reverbMixSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::reverbMix, *reverbMixSlider);
     addAndMakeVisible(*reverbMixSlider);
 
     reverbMixLabel = std::make_unique<juce::Label>("ReverbMixLabel", "Mix");
     reverbMixLabel->attachToComponent(reverbMixSlider.get(), false);
-    reverbMixLabel->setJustification(juce::Justification::centred);
+    reverbMixLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*reverbMixLabel);
 
     reverbDecaySlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     reverbDecaySlider->setRange(0.1, 10.0, 0.1);
     reverbDecayAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::REVERB_DECAY_PARAM, *reverbDecaySlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::reverbDecay, *reverbDecaySlider);
     addAndMakeVisible(*reverbDecaySlider);
 
     reverbDecayLabel = std::make_unique<juce::Label>("ReverbDecayLabel", "Decay");
     reverbDecayLabel->attachToComponent(reverbDecaySlider.get(), false);
-    reverbDecayLabel->setJustification(juce::Justification::centred);
+    reverbDecayLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*reverbDecayLabel);
 
     reverbPreDelaySlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     reverbPreDelaySlider->setRange(0.0, 0.1, 0.001);
     reverbPreDelayAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::REVERB_PREDELAY_PARAM, *reverbPreDelaySlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::reverbPredelay, *reverbPreDelaySlider);
     addAndMakeVisible(*reverbPreDelaySlider);
 
     reverbPreDelayLabel = std::make_unique<juce::Label>("ReverbPreDelayLabel", "Pre-Delay");
     reverbPreDelayLabel->attachToComponent(reverbPreDelaySlider.get(), false);
-    reverbPreDelayLabel->setJustification(juce::Justification::centred);
+    reverbPreDelayLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*reverbPreDelayLabel);
 
     //==========================================================================
@@ -408,23 +408,23 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     spectralEnhanceSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     spectralEnhanceSlider->setRange(0.0, 1.0, 0.01);
     spectralEnhanceAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::SPECTRAL_ENHANCE_PARAM, *spectralEnhanceSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::spectralEnhancement, *spectralEnhanceSlider);
     addAndMakeVisible(*spectralEnhanceSlider);
 
     spectralEnhanceLabel = std::make_unique<juce::Label>("SpectralEnhanceLabel", "Enhance");
     spectralEnhanceLabel->attachToComponent(spectralEnhanceSlider.get(), false);
-    spectralEnhanceLabel->setJustification(juce::Justification::centred);
+    spectralEnhanceLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*spectralEnhanceLabel);
 
     harmonicsBoostSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     harmonicsBoostSlider->setRange(0.0, 1.0, 0.01);
     harmonicsBoostAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::HARMONICS_BOOST_PARAM, *harmonicsBoostSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::harmonicsBoost, *harmonicsBoostSlider);
     addAndMakeVisible(*harmonicsBoostSlider);
 
     harmonicsBoostLabel = std::make_unique<juce::Label>("HarmonicsBoostLabel", "Harmonics");
     harmonicsBoostLabel->attachToComponent(harmonicsBoostSlider.get(), false);
-    harmonicsBoostLabel->setJustification(juce::Justification::centred);
+    harmonicsBoostLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*harmonicsBoostLabel);
 
     //==========================================================================
@@ -436,34 +436,34 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     subharmonicMixSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     subharmonicMixSlider->setRange(0.0, 1.0, 0.01);
     subharmonicMixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::SUBHARMONIC_MIX_PARAM, *subharmonicMixSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::subharmonicMix, *subharmonicMixSlider);
     addAndMakeVisible(*subharmonicMixSlider);
 
     subharmonicMixLabel = std::make_unique<juce::Label>("SubharmonicMixLabel", "Mix");
     subharmonicMixLabel->attachToComponent(subharmonicMixSlider.get(), false);
-    subharmonicMixLabel->setJustification(juce::Justification::centred);
+    subharmonicMixLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*subharmonicMixLabel);
 
     subharmonicDepthSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     subharmonicDepthSlider->setRange(0.0, 1.0, 0.01);
     subharmonicDepthAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::SUBHARMONIC_DEPTH_PARAM, *subharmonicDepthSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::subharmonicDepth, *subharmonicDepthSlider);
     addAndMakeVisible(*subharmonicDepthSlider);
 
     subharmonicDepthLabel = std::make_unique<juce::Label>("SubharmonicDepthLabel", "Depth");
     subharmonicDepthLabel->attachToComponent(subharmonicDepthSlider.get(), false);
-    subharmonicDepthLabel->setJustification(juce::Justification::centred);
+    subharmonicDepthLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*subharmonicDepthLabel);
 
     subharmonicRatioSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     subharmonicRatioSlider->setRange(0.5, 2.0, 0.01);
     subharmonicRatioAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::SUBHARMONIC_RATIO_PARAM, *subharmonicRatioSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::subharmonicRatio, *subharmonicRatioSlider);
     addAndMakeVisible(*subharmonicRatioSlider);
 
     subharmonicRatioLabel = std::make_unique<juce::Label>("SubharmonicRatioLabel", "Ratio");
     subharmonicRatioLabel->attachToComponent(subharmonicRatioSlider.get(), false);
-    subharmonicRatioLabel->setJustification(juce::Justification::centred);
+    subharmonicRatioLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*subharmonicRatioLabel);
 
     //==========================================================================
@@ -475,23 +475,23 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     crossfadeDurationSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     crossfadeDurationSlider->setRange(0.01, 1.0, 0.01);
     crossfadeDurationAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::CROSSFADE_DURATION_PARAM, *crossfadeDurationSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::diphoneCrossfadeDuration, *crossfadeDurationSlider);
     addAndMakeVisible(*crossfadeDurationSlider);
 
     crossfadeDurationLabel = std::make_unique<juce::Label>("CrossfadeDurationLabel", "Crossfade");
     crossfadeDurationLabel->attachToComponent(crossfadeDurationSlider.get(), false);
-    crossfadeDurationLabel->setJustification(juce::Justification::centred);
+    crossfadeDurationLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*crossfadeDurationLabel);
 
     formantSmoothingSlider = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow);
     formantSmoothingSlider->setRange(0.0, 1.0, 0.01);
     formantSmoothingAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        params, ChoirV2Processor::FORMANT_SMOOTHING_PARAM, *formantSmoothingSlider);
+        params, DSP::ChoirV2PureDSP::ParameterID::diphoneFormantSmoothing, *formantSmoothingSlider);
     addAndMakeVisible(*formantSmoothingSlider);
 
     formantSmoothingLabel = std::make_unique<juce::Label>("FormantSmoothingLabel", "Smoothing");
     formantSmoothingLabel->attachToComponent(formantSmoothingSlider.get(), false);
-    formantSmoothingLabel->setJustification(juce::Justification::centred);
+    formantSmoothingLabel->setJustificationType(juce::Justification::centred);
     addAndMakeVisible(*formantSmoothingLabel);
 
     //==========================================================================
@@ -506,7 +506,7 @@ ChoirV2Editor::ChoirV2Editor(ChoirV2Processor& p)
     synthesisMethodCombo->addItem("Diphone", 3);
     synthesisMethodCombo->setSelectedId(1);
     synthesisMethodAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
-        params, ChoirV2Processor::SYNTHESIS_METHOD_PARAM, *synthesisMethodCombo);
+        params, DSP::ChoirV2PureDSP::ParameterID::synthesisMethod, *synthesisMethodCombo);
     addAndMakeVisible(*synthesisMethodCombo);
 
     synthesisMethodLabel = std::make_unique<juce::Label>("SynthesisMethodLabel", "Method");
@@ -550,11 +550,11 @@ void ChoirV2Editor::paint(juce::Graphics& g)
 
     // Title
     g.setColour(juce::Colour(220, 220, 220));
-    g.setFont(juce::Font(32.0f, juce::Font::bold));
+    g.setFont(juce::Font(juce::FontOptions()));
     g.drawText("Choir V2", getLocalBounds().removeFromTop(40), juce::Justification::centred, true);
 
     // Subtitle
-    g.setFont(juce::Font(14.0f));
+    g.setFont(juce::Font(juce::FontOptions()));
     g.drawText("Choral Synthesis Instrument", getLocalBounds().removeFromTop(60), juce::Justification::centred, true);
 }
 
@@ -580,7 +580,7 @@ void ChoirV2Editor::resized()
     phonemeDisplayValue->setBounds(masterText.removeFromLeft(80).reduced(5));
 
     // Preset management
-    auto presetBounds = masterInner.getRight(100).reduced(5);
+    auto presetBounds = masterInner.removeFromRight(100).reduced(5);
     presetComboBox->setBounds(presetBounds.removeFromTop(25));
     presetLoadButton->setBounds(presetBounds.removeFromTop(25));
     presetSaveButton->setBounds(presetBounds.removeFromTop(25));

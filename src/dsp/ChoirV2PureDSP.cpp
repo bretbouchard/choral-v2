@@ -89,6 +89,8 @@ void ChoirV2PureDSP::reset()
 void ChoirV2PureDSP::process(juce::AudioBuffer<float>& buffer,
                             const juce::MidiBuffer& midiMessages)
 {
+    (void)midiMessages; // Unused until MIDI processing is implemented
+
     // Clear output buffer
     buffer.clear();
 
@@ -102,19 +104,19 @@ void ChoirV2PureDSP::handleEvent(const ScheduledEvent& event)
     switch (event.type)
     {
         case ScheduledEvent::NoteOn:
-            processNoteOn(event.noteNumber, event.velocity);
+            processNoteOn(event.noteOn.noteNumber, event.noteOn.velocity);
             break;
 
         case ScheduledEvent::NoteOff:
-            processNoteOff(event.noteNumber);
+            processNoteOff(event.noteOn.noteNumber);
             break;
 
         case ScheduledEvent::PitchBend:
-            processPitchBend(event.pitchBendValue);
+            processPitchBend(event.pitchBend.pitchBendValue);
             break;
 
         case ScheduledEvent::Aftertouch:
-            processAftertouch(event.aftertouchValue);
+            processAftertouch(event.aftertouch.aftertouchValue);
             break;
 
         default:
@@ -130,7 +132,7 @@ void ChoirV2PureDSP::setParameter(const juce::String& parameterID, float value)
 
 float ChoirV2PureDSP::getParameter(const juce::String& parameterID) const
 {
-    return parameters.getParameter(parameterID, 0.0f);
+    return parameters[parameterID];
 }
 
 //==============================================================================
@@ -248,6 +250,8 @@ ChoirV2PureDSP::Formant ChoirV2PureDSP::calculateFormants(float vowelX,
                                                           float vowelY,
                                                           float vowelZ) const
 {
+    (void)vowelX; (void)vowelY; (void)vowelZ; // Unused until implementation
+
     // TODO: Implement formant calculation based on vowel space position
     // This maps 3D vowel space coordinates to formant frequencies
 
@@ -270,6 +274,8 @@ ChoirV2PureDSP::Formant ChoirV2PureDSP::calculateFormants(float vowelX,
 float ChoirV2PureDSP::synthesizeFormant(float input, float frequency,
                                         float bandwidth, float& phase)
 {
+    (void)frequency; (void)bandwidth; (void)phase; // Unused until implementation
+
     // TODO: Implement formant resonance using biquad filter
     // This is a stub that returns the input unchanged
     return input;
@@ -278,18 +284,21 @@ float ChoirV2PureDSP::synthesizeFormant(float input, float frequency,
 //==============================================================================
 void ChoirV2PureDSP::processReverb(juce::AudioBuffer<float>& buffer)
 {
+    (void)buffer; // Unused until implementation
     // TODO: Implement reverb effect
     // Use JUCE's ReverbAudioSource or custom algorithm
 }
 
 void ChoirV2PureDSP::processSubharmonic(juce::AudioBuffer<float>& buffer)
 {
+    (void)buffer; // Unused until implementation
     // TODO: Implement subharmonic generation
     // Add frequency-divided content at configurable ratio
 }
 
 void ChoirV2PureDSP::processSpectralEnhancement(juce::AudioBuffer<float>& buffer)
 {
+    (void)buffer; // Unused until implementation
     // TODO: Implement spectral enhancement
     // Boost harmonics using FFT or phase vocoder
 }
