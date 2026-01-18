@@ -1,0 +1,7 @@
+/Users/bretbouchard/apps/schill/white_room/juce_backend/instruments/choral_v2/build/CMakeFiles/ChoirV2PureDSP.dir
+/Users/bretbouchard/apps/schill/white_room/juce_backend/instruments/choral_v2/build/CMakeFiles/edit_cache.dir
+/Users/bretbouchard/apps/schill/white_room/juce_backend/instruments/choral_v2/build/CMakeFiles/rebuild_cache.dir
+/Users/bretbouchard/apps/schill/white_room/juce_backend/instruments/choral_v2/build/CMakeFiles/list_install_components.dir
+/Users/bretbouchard/apps/schill/white_room/juce_backend/instruments/choral_v2/build/CMakeFiles/install.dir
+/Users/bretbouchard/apps/schill/white_room/juce_backend/instruments/choral_v2/build/CMakeFiles/install/local.dir
+/Users/bretbouchard/apps/schill/white_room/juce_backend/instruments/choral_v2/build/CMakeFiles/install/strip.dir

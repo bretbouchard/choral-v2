@@ -33,37 +33,17 @@ if(CHOIR_V2_ENABLE_SIMD)
     endif()
 endif()
 
-# Source files
+# Source files (old files removed during PureDSP refactoring)
 set(CORE_SOURCES
-    src/core/PhonemeDatabase.cpp
-    src/core/LanguageLoader.cpp
-    src/core/G2PEngine.cpp
-    src/core/ChoirV2Engine.cpp
-    src/core/VoiceManager.cpp
-    src/core/VoiceAllocator.cpp
-    src/core/Voice.cpp
-    src/core/PresetManager.cpp
 )
 
 set(SYNTHESIS_SOURCES
-    src/synthesis/FormantSynthesis.cpp
-    src/synthesis/SubharmonicSynthesis.cpp
-    src/synthesis/DiphoneSynthesis.cpp
-    src/synthesis/ISynthesisMethod.cpp
 )
 
 set(DSP_SOURCES
-    src/dsp/FormantResonator.cpp
-    src/dsp/GlottalSource.cpp
-    src/dsp/LinearSmoother.cpp
-    src/dsp/SpectralEnhancer.cpp
-    src/dsp/SubharmonicGenerator.cpp
-    src/dsp/ReverbEffect.cpp
 )
 
 set(UTILS_SOURCES
-    src/utils/SIMDHelpers.cpp
-    src/utils/MemoryPool.cpp
 )
 
 # Plugin source files
@@ -77,29 +57,8 @@ set(PLUGIN_HEADERS
     include/plugin/ChoirV2Editor.h
 )
 
-# Header files
+# Header files (old files removed during PureDSP refactoring)
 set(HEADERS
-    src/core/PhonemeDatabase.h
-    src/core/LanguageLoader.h
-    src/core/G2PEngine.h
-    src/core/ChoirV2Engine.h
-    src/core/VoiceManager.h
-    src/core/VoiceAllocator.h
-    src/core/Voice.h
-    src/core/PresetManager.h
-    src/synthesis/FormantSynthesis.h
-    src/synthesis/SubharmonicSynthesis.h
-    src/synthesis/DiphoneSynthesis.h
-    src/synthesis/ISynthesisMethod.h
-    src/dsp/FormantResonator.h
-    src/dsp/GlottalSource.h
-    src/dsp/LinearSmoother.h
-    src/dsp/SpectralEnhancer.h
-    src/dsp/SubharmonicGenerator.h
-    src/dsp/ReverbEffect.h
-    src/utils/SIMDHelpers.h
-    src/utils/MemoryPool.h
-    src/utils/LockFreeQueue.h
     ${PLUGIN_HEADERS}
 )
 
@@ -107,18 +66,40 @@ set(HEADERS
 find_package(nlohmann_json 3.11.2 REQUIRED)
 
 #==============================================================================
+# Find JUCE (needed for PureDSP library)
+#==============================================================================
+
+# Try to find JUCE in common locations
+if(NOT JUCE_PATH)
+    if(EXISTS "$ENV{JUCE_DIR}")
+        set(JUCE_PATH "$ENV{JUCE_DIR}")
+    elseif(EXISTS "$ENV{HOME}/JUCE")
+        set(JUCE_PATH "$ENV{HOME}/JUCE")
+    elseif(EXISTS "/usr/local/JUCE")
+        set(JUCE_PATH "/usr/local/JUCE")
+    elseif(EXISTS "/opt/JUCE")
+        set(JUCE_PATH "/opt/JUCE")
+    endif()
+endif()
+
+if(EXISTS "${JUCE_PATH}")
+    message(STATUS "Found JUCE at: ${JUCE_PATH}")
+    # Add JUCE subdirectory (but don't create plugin yet)
+    add_subdirectory("${JUCE_PATH}" "${CMAKE_BINARY_DIR}/juce")
+    set(JUCE_FOUND TRUE)
+else()
+    message(WARNING "JUCE not found. PureDSP library requires JUCE types.")
+    message(WARNING "Set JUCE_PATH environment variable or pass -DJUCE_PATH=/path/to/JUCE")
+    set(JUCE_FOUND FALSE)
+endif()
+
+#==============================================================================
 # Choir V2 PureDSP Library
 #==============================================================================
 
-# PureDSP source files (will be populated incrementally)
+# PureDSP source files (consolidated in ChoirV2PureDSP.cpp)
 set(PURE_DSP_SOURCES
     src/dsp/ChoirV2PureDSP.cpp
-    src/dsp/core/PhonemeDatabase.cpp
-    src/dsp/core/G2PEngine.cpp
-    src/dsp/core/LanguageLoader.cpp
-    src/dsp/synthesis/FormantSynthesisMethod.cpp
-    src/dsp/synthesis/DiphoneSynthesisMethod.cpp
-    src/dsp/synthesis/SubharmonicSynthesisMethod.cpp
 )
 
 # PureDSP header files
@@ -147,9 +128,10 @@ target_include_directories(ChoirV2PureDSP PUBLIC
 # Set C++ standard for PureDSP
 target_compile_features(ChoirV2PureDSP PUBLIC cxx_std_20)
 
-# Link nlohmann/json for JSON parsing
+# Link nlohmann/json for JSON parsing and JUCE
 target_link_libraries(ChoirV2PureDSP PUBLIC
     nlohmann_json::nlohmann_json
+    juce::juce_core
 )
 
 message(STATUS "Choir V2 PureDSP library configured")
@@ -159,30 +141,10 @@ message(STATUS "Choir V2 PureDSP library configured")
 #==============================================================================
 
 if(CHOIR_V2_BUILD_CORE)
-# Core library (old ChoirV2 code - disabled by default during PureDSP migration)
-add_library(ChoirV2Core STATIC
-    ${CORE_SOURCES}
-    ${SYNTHESIS_SOURCES}
-    ${DSP_SOURCES}
-    ${UTILS_SOURCES}
-    ${HEADERS}
-)
-
-target_include_directories(ChoirV2Core PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/../../include  # For InstrumentDSP.h
-)
-
-# Link nlohmann/json for JSON parsing
-target_link_libraries(ChoirV2Core PUBLIC
-    nlohmann_json::nlohmann_json
-    ChoirV2PureDSP
-)
-
-message(STATUS "Choir V2 Core library: ENABLED")
+# Core library (old ChoirV2 code - removed during PureDSP refactoring)
+message(STATUS "Choir V2 Core library: DISABLED (removed during PureDSP refactoring)")
 else()
-message(STATUS "Choir V2 Core library: DISABLED (PureDSP migration in progress)")
+message(STATUS "Choir V2 Core library: DISABLED (PureDSP migration complete)")
 endif()
 
 # Tests
@@ -202,29 +164,7 @@ endif()
 
 # JUCE Plugin
 if(CHOIR_V2_BUILD_PLUGIN)
-    # Find JUCE
-    # Note: JUCE 8.0.0 uses individual module headers
-    # You need to set JUCE_DIR environment variable or pass JUCE_PATH to CMake
-
-    # Try to find JUCE in common locations
-    if(NOT JUCE_PATH)
-        if(EXISTS "$ENV{JUCE_DIR}")
-            set(JUCE_PATH "$ENV{JUCE_DIR}")
-        elseif(EXISTS "$ENV{HOME}/JUCE")
-            set(JUCE_PATH "$ENV{HOME}/JUCE")
-        elseif(EXISTS "/usr/local/JUCE")
-            set(JUCE_PATH "/usr/local/JUCE")
-        elseif(EXISTS "/opt/JUCE")
-            set(JUCE_PATH "/opt/JUCE")
-        endif()
-    endif()
-
-    if(EXISTS "${JUCE_PATH}")
-        message(STATUS "Found JUCE at: ${JUCE_PATH}")
-
-        # Add JUCE subdirectory
-        add_subdirectory("${JUCE_PATH}" "${CMAKE_BINARY_DIR}/juce")
-
+    if(JUCE_FOUND)
         # Create JUCE plugin
         juce_add_plugin(ChoirV2Plugin
             COMPANY_NAME "Bret Bouchard"
@@ -260,23 +200,13 @@ if(CHOIR_V2_BUILD_PLUGIN)
             ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
 
-        # Link dependencies
-        if(CHOIR_V2_BUILD_CORE)
-            target_link_libraries(ChoirV2Plugin PRIVATE
-                ChoirV2Core
-                ChoirV2PureDSP
-                nlohmann_json::nlohmann_json
-                juce::juce_audio_utils
-                juce::juce_dsp
-            )
-        else()
-            target_link_libraries(ChoirV2Plugin PRIVATE
-                ChoirV2PureDSP
-                nlohmann_json::nlohmann_json
-                juce::juce_audio_utils
-                juce::juce_dsp
-            )
-        endif()
+        # Link dependencies (PureDSP only - Core library removed)
+        target_link_libraries(ChoirV2Plugin PRIVATE
+            ChoirV2PureDSP
+            nlohmann_json::nlohmann_json
+            juce::juce_audio_utils
+            juce::juce_dsp
+        )
 
         # Output directories for plugins
         set_target_properties(ChoirV2Plugin PROPERTIES
@@ -330,18 +260,16 @@ if(CHOIR_V2_BUILD_PLUGIN)
     endif()
 endif()
 
-# Installation
-if(CHOIR_V2_BUILD_CORE)
-install(TARGETS ChoirV2Core
+# Installation (PureDSP only - Core library removed)
+install(TARGETS ChoirV2PureDSP
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
 )
 
-install(FILES ${HEADERS}
+install(FILES ${PURE_DSP_HEADERS}
     DESTINATION include/ChoirV2
 )
-endif()
 
 # Print configuration
 message(STATUS "")

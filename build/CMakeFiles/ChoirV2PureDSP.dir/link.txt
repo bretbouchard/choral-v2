@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libChoirV2PureDSP.a CMakeFiles/ChoirV2PureDSP.dir/src/dsp/ChoirV2PureDSP.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libChoirV2PureDSP.a
