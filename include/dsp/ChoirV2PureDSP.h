@@ -35,6 +35,14 @@
 #pragma once
 
 #include "dsp/InstrumentDSP.h"
+#include "dsp/synthesis/ISynthesisMethod.h"
+#include "dsp/synthesis/FormantSynthesisMethod.h"
+#include "dsp/synthesis/SubharmonicSynthesisMethod.h"
+#include "dsp/synthesis/DiphoneSynthesisMethod.h"
+#include "dsp/core/PhonemeDatabase.h"
+#include "dsp/core/LanguageLoader.h"
+#include "dsp/core/G2PEngine.h"
+#include "../../src/core/VoiceManager.h"
 #include <vector>
 #include <array>
 #include <memory>
@@ -110,39 +118,6 @@ namespace ChoirV2Parameters {
     // Diphone/Coarticulation
     constexpr const char* COARTICULATION_AMOUNT = "coarticulationAmount";
     constexpr const char* TRANSITION_SPEED = "transitionSpeed";
-}
-
-//==============================================================================
-// Forward Declarations - Synthesis Methods
-//==============================================================================
-
-class IFormantSynthesis;
-class ISubharmonicSynthesis;
-class IDiphoneSynthesis;
-
-//==============================================================================
-// Forward Declarations - DSP Components
-//==============================================================================
-
-class FormantResonator;
-class GlottalSource;
-class SubharmonicGenerator;
-class SpectralEnhancer;
-class LinearSmoother;
-class ReverbEffect;
-
-//==============================================================================
-// Forward Declarations - Core Components
-//==============================================================================
-
-namespace DSP {
-class PhonemeDatabase;
-class LanguageLoader;
-class G2PEngine;
-class VoiceManager;
-class VoiceAllocator;
-class ChoirV2Voice;
-class PresetManager;
 }
 
 //==============================================================================
@@ -375,10 +350,9 @@ private:
     // Synthesis Engines
     //==========================================================================
 
-    // TODO: Uncomment when synthesis methods are fully implemented
-    // std::unique_ptr<IFormantSynthesis> formantSynth_;
-    // std::unique_ptr<ISubharmonicSynthesis> subharmonicSynth_;
-    // std::unique_ptr<IDiphoneSynthesis> diphoneSynth_;
+    std::unique_ptr<FormantSynthesisMethod> formantSynth_;
+    std::unique_ptr<SubharmonicSynthesisMethod> subharmonicSynth_;
+    std::unique_ptr<DiphoneSynthesisMethod> diphoneSynth_;
 
     //==========================================================================
     // DSP Components
@@ -410,13 +384,10 @@ private:
     // Core Components
     //==========================================================================
 
-    // TODO: Uncomment when core components are fully implemented
-    // std::unique_ptr<PhonemeDatabase> phonemeDB_;
-    // std::unique_ptr<LanguageLoader> languageLoader_;
-    // std::unique_ptr<G2PEngine> g2pEngine_;
-    // std::unique_ptr<VoiceManager> voiceManager_;
-    // std::unique_ptr<VoiceAllocator> voiceAllocator_;
-    // std::unique_ptr<PresetManager> presetManager_;
+    std::shared_ptr<PhonemeDatabase> phonemeDB_;
+    std::unique_ptr<LanguageLoader> languageLoader_;
+    std::unique_ptr<G2PEngine> g2pEngine_;
+    std::unique_ptr<ChoirV2::VoiceManager> voiceManager_;
 
     //==========================================================================
     // Parameters
@@ -488,6 +459,7 @@ private:
     // State
     //==========================================================================
 
+    bool prepared_ = false;
     double sampleRate_ = 48000.0;
     int blockSize_ = 512;
 

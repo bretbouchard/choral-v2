@@ -12,6 +12,7 @@
 #include "ISynthesisMethod.h"
 #include "../../src/dsp/FormantResonator.h"
 #include "../../src/dsp/LinearSmoother.h"
+#include "dsp/core/PhonemeTypes.h"
 #include <array>
 #include <cmath>
 #include <vector>
@@ -49,14 +50,6 @@ struct DiphoneState {
     float position = 0.0f;               // Current position (0-1)
     float duration = 0.15f;              // Total duration (seconds)
     bool is_transitioning = false;       // Currently in transition?
-};
-
-/**
- * @brief Formant data structure (for interpolation)
- */
-struct FormantData {
-    std::array<float, 4> frequencies;    // F1-F4 frequencies
-    std::array<float, 4> bandwidths;     // F1-F4 bandwidths
 };
 
 /**
