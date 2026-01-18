@@ -10,7 +10,7 @@ option(CHOIR_V2_BUILD_TESTS "Build unit tests" OFF)
 option(CHOIR_V2_BUILD_BENCHMARKS "Build performance benchmarks" ON)
 option(CHOIR_V2_ENABLE_SIMD "Enable SIMD optimizations" ON)
 option(CHOIR_V2_BUILD_PLUGIN "Build JUCE plugin" ON)
-option(CHOIR_V2_BUILD_CORE "Build ChoirV2Core (old ChoirV2 code)" OFF)
+option(CHOIR_V2_BUILD_CORE "Build ChoirV2Core (old ChoirV2 code)" ON)
 option(CHOIR_V2_PLUGIN_FORMATS "Plugin formats to build" "VST3;AU;CLAP;LV2;AUv3;Standalone")
 
 # Compiler flags
@@ -73,8 +73,8 @@ set(PLUGIN_SOURCES
 )
 
 set(PLUGIN_HEADERS
-    src/plugin/ChoirV2Processor.h
-    src/plugin/ChoirV2Editor.h
+    include/plugin/ChoirV2Processor.h
+    include/plugin/ChoirV2Editor.h
 )
 
 # Header files

@@ -1,1 +1,0 @@
-// Placeholder implementation: SIMDHelpers.cpp
