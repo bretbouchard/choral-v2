@@ -10,7 +10,7 @@ option(CHOIR_V2_BUILD_TESTS "Build unit tests" OFF)
 option(CHOIR_V2_BUILD_BENCHMARKS "Build performance benchmarks" ON)
 option(CHOIR_V2_ENABLE_SIMD "Enable SIMD optimizations" ON)
 option(CHOIR_V2_BUILD_PLUGIN "Build JUCE plugin" ON)
-option(CHOIR_V2_PLUGIN_FORMATS "Plugin formats to build" "VST3;AU;CLAP;LV2;Standalone")
+option(CHOIR_V2_PLUGIN_FORMATS "Plugin formats to build" "VST3;AU;CLAP;LV2;AUv3;Standalone")
 
 # Compiler flags
 if(MSVC)
@@ -241,6 +241,12 @@ if(CHOIR_V2_BUILD_PLUGIN)
         if(TARGET ChoirV2Plugin_Standalone)
             set_target_properties(ChoirV2Plugin_Standalone PROPERTIES
                 RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/standalone"
+            )
+        endif()
+
+        if(TARGET ChoirV2Plugin_AUv3)
+            set_target_properties(ChoirV2Plugin_AUv3 PROPERTIES
+                LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/auv3"
             )
         endif()
 
