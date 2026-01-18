@@ -10,6 +10,7 @@ option(CHOIR_V2_BUILD_TESTS "Build unit tests" OFF)
 option(CHOIR_V2_BUILD_BENCHMARKS "Build performance benchmarks" ON)
 option(CHOIR_V2_ENABLE_SIMD "Enable SIMD optimizations" ON)
 option(CHOIR_V2_BUILD_PLUGIN "Build JUCE plugin" ON)
+option(CHOIR_V2_BUILD_CORE "Build ChoirV2Core (old ChoirV2 code)" OFF)
 option(CHOIR_V2_PLUGIN_FORMATS "Plugin formats to build" "VST3;AU;CLAP;LV2;AUv3;Standalone")
 
 # Compiler flags
@@ -105,7 +106,60 @@ set(HEADERS
 # Find nlohmann/json for JSON parsing
 find_package(nlohmann_json 3.11.2 REQUIRED)
 
-# Core library
+#==============================================================================
+# Choir V2 PureDSP Library
+#==============================================================================
+
+# PureDSP source files (will be populated incrementally)
+set(PURE_DSP_SOURCES
+    src/dsp/ChoirV2PureDSP.cpp
+    src/dsp/core/PhonemeDatabase.cpp
+    src/dsp/core/G2PEngine.cpp
+    src/dsp/core/LanguageLoader.cpp
+    src/dsp/synthesis/FormantSynthesisMethod.cpp
+    src/dsp/synthesis/DiphoneSynthesisMethod.cpp
+    src/dsp/synthesis/SubharmonicSynthesisMethod.cpp
+)
+
+# PureDSP header files
+set(PURE_DSP_HEADERS
+    include/dsp/ChoirV2PureDSP.h
+    include/dsp/core/PhonemeTypes.h
+    include/dsp/core/PhonemeDatabase.h
+    include/dsp/core/G2PEngine.h
+    include/dsp/core/LanguageLoader.h
+    include/dsp/synthesis/ISynthesisMethod.h
+    include/dsp/synthesis/FormantSynthesisMethod.h
+    include/dsp/synthesis/DiphoneSynthesisMethod.h
+    include/dsp/synthesis/SubharmonicSynthesisMethod.h
+)
+
+# Create PureDSP static library
+add_library(ChoirV2PureDSP STATIC ${PURE_DSP_SOURCES})
+
+# Include directories for PureDSP
+target_include_directories(ChoirV2PureDSP PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dsp
+    ${CMAKE_SOURCE_DIR}/../../include  # For InstrumentDSP.h
+)
+
+# Set C++ standard for PureDSP
+target_compile_features(ChoirV2PureDSP PUBLIC cxx_std_20)
+
+# Link nlohmann/json for JSON parsing
+target_link_libraries(ChoirV2PureDSP PUBLIC
+    nlohmann_json::nlohmann_json
+)
+
+message(STATUS "Choir V2 PureDSP library configured")
+
+#==============================================================================
+# Choir V2 Core Library
+#==============================================================================
+
+if(CHOIR_V2_BUILD_CORE)
+# Core library (old ChoirV2 code - disabled by default during PureDSP migration)
 add_library(ChoirV2Core STATIC
     ${CORE_SOURCES}
     ${SYNTHESIS_SOURCES}
@@ -116,12 +170,20 @@ add_library(ChoirV2Core STATIC
 
 target_include_directories(ChoirV2Core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/../../include  # For InstrumentDSP.h
 )
 
 # Link nlohmann/json for JSON parsing
 target_link_libraries(ChoirV2Core PUBLIC
     nlohmann_json::nlohmann_json
+    ChoirV2PureDSP
 )
+
+message(STATUS "Choir V2 Core library: ENABLED")
+else()
+message(STATUS "Choir V2 Core library: DISABLED (PureDSP migration in progress)")
+endif()
 
 # Tests
 if(CHOIR_V2_BUILD_TESTS)
@@ -199,12 +261,22 @@ if(CHOIR_V2_BUILD_PLUGIN)
         )
 
         # Link dependencies
-        target_link_libraries(ChoirV2Plugin PRIVATE
-            ChoirV2Core
-            nlohmann_json::nlohmann_json
-            juce::juce_audio_utils
-            juce::juce_dsp
-        )
+        if(CHOIR_V2_BUILD_CORE)
+            target_link_libraries(ChoirV2Plugin PRIVATE
+                ChoirV2Core
+                ChoirV2PureDSP
+                nlohmann_json::nlohmann_json
+                juce::juce_audio_utils
+                juce::juce_dsp
+            )
+        else()
+            target_link_libraries(ChoirV2Plugin PRIVATE
+                ChoirV2PureDSP
+                nlohmann_json::nlohmann_json
+                juce::juce_audio_utils
+                juce::juce_dsp
+            )
+        endif()
 
         # Output directories for plugins
         set_target_properties(ChoirV2Plugin PROPERTIES
@@ -259,6 +331,7 @@ if(CHOIR_V2_BUILD_PLUGIN)
 endif()
 
 # Installation
+if(CHOIR_V2_BUILD_CORE)
 install(TARGETS ChoirV2Core
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
@@ -268,6 +341,7 @@ install(TARGETS ChoirV2Core
 install(FILES ${HEADERS}
     DESTINATION include/ChoirV2
 )
+endif()
 
 # Print configuration
 message(STATUS "")
