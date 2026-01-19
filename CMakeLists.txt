@@ -69,16 +69,28 @@ find_package(nlohmann_json 3.11.2 REQUIRED)
 # Find JUCE (needed for PureDSP library)
 #==============================================================================
 
-# Try to find JUCE in common locations
+# Try to find JUCE in common locations (priority order)
 if(NOT JUCE_PATH)
-    if(EXISTS "$ENV{JUCE_DIR}")
+    # 1. Project-local JUCE (for reproducible builds) - HIGHEST PRIORITY
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../../external/JUCE")
+        set(JUCE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../external/JUCE")
+        message(STATUS "Using project-local JUCE: ${JUCE_PATH}")
+    # 2. Environment variable
+    elseif(EXISTS "$ENV{JUCE_DIR}")
         set(JUCE_PATH "$ENV{JUCE_DIR}")
+        message(STATUS "Using JUCE from environment variable: ${JUCE_PATH}")
+    # 3. User home directory
     elseif(EXISTS "$ENV{HOME}/JUCE")
         set(JUCE_PATH "$ENV{HOME}/JUCE")
+        message(STATUS "Using JUCE from user home: ${JUCE_PATH}")
+    # 4. System-wide installation
     elseif(EXISTS "/usr/local/JUCE")
         set(JUCE_PATH "/usr/local/JUCE")
+        message(STATUS "Using system JUCE: ${JUCE_PATH}")
+    # 5. Opt installation
     elseif(EXISTS "/opt/JUCE")
         set(JUCE_PATH "/opt/JUCE")
+        message(STATUS "Using opt JUCE: ${JUCE_PATH}")
     endif()
 endif()
 
@@ -105,6 +117,7 @@ set(PURE_DSP_SOURCES
 # PureDSP header files
 set(PURE_DSP_HEADERS
     include/dsp/ChoirV2PureDSP.h
+    include/dsp/ChoirV2DSPModules.h
     include/dsp/core/PhonemeTypes.h
     include/dsp/core/PhonemeDatabase.h
     include/dsp/core/G2PEngine.h
