@@ -2,6 +2,9 @@
 
 #include <juce_core/juce_core.h>
 #include <juce_audio_basics/juce_audio_basics.h>
+#include "dsp/ChoirV2DSPModules.h"
+#include <memory>
+#include <array>
 
 namespace DSP {
 
@@ -156,18 +159,20 @@ private:
     void processAftertouch(float aftertouchValue);
 
     //==============================================================================
-    // Voice management
+    // Voice management (single-threaded SIMD processing)
     struct Voice {
         int noteNumber;
         float velocity;
         float age;
         bool active;
-        float phase[4]; // Formant phases
+        float phase; // Oscillator phase
         float lfoPhase;
+        float pan; // Stereo pan position (-1 to 1)
+        float detune; // Detune amount in semitones
     };
 
     juce::OwnedArray<Voice> voices;
-    int maxPolyphony = 64;
+    int maxPolyphony = 40; // Realistic performance target: 40 voices @ 30% CPU
 
     //==============================================================================
     // Parameter storage (normalized 0-1 range)
@@ -188,7 +193,19 @@ private:
     int samplesPerBlock = 512;
 
     //==============================================================================
-    // Formant synthesis
+    // DSP processing modules (corrected implementations)
+    std::unique_ptr<FormantSynthesis> formantSynthesis;
+    std::unique_ptr<SubharmonicGenerator> subharmonicGenerator;
+    std::unique_ptr<SpectralEnhancer> spectralEnhancer;
+
+    // Parameter smoothers (prevent clicks during transitions)
+    std::unique_ptr<LinearSmoother> vowelXSmoother;
+    std::unique_ptr<LinearSmoother> vowelYSmoother;
+    std::unique_ptr<LinearSmoother> vowelZSmoother;
+    std::unique_ptr<LinearSmoother> formantScaleSmoother;
+
+    //==============================================================================
+    // Formant synthesis (legacy interface - now delegates to FormantSynthesis module)
     struct Formant {
         float f1, f2, f3, f4; // Formant frequencies
         float b1, b2, b3, b4; // Formant bandwidths

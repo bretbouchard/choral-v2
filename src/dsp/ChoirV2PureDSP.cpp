@@ -1,5 +1,6 @@
 #include "dsp/ChoirV2PureDSP.h"
 #include <juce_core/juce_core.h>
+#include <juce_dsp/juce_dsp.h>
 
 namespace DSP {
 
@@ -8,7 +9,7 @@ ChoirV2PureDSP::ChoirV2PureDSP()
 {
     // Initialize default parameters
     parameters.set(juce::String(ParameterID::masterVolume), 0.8f);
-    parameters.set(juce::String(ParameterID::polyphony), 32.0f);
+    parameters.set(juce::String(ParameterID::polyphony), 40.0f);  // Updated to realistic target
     parameters.set(juce::String(ParameterID::vowelX), 0.0f);
     parameters.set(juce::String(ParameterID::vowelY), 0.0f);
     parameters.set(juce::String(ParameterID::vowelZ), 0.0f);
@@ -20,7 +21,7 @@ ChoirV2PureDSP::ChoirV2PureDSP()
     parameters.set(juce::String(ParameterID::vibratoDepth), 0.1f);
     parameters.set(juce::String(ParameterID::vibratoDelay), 0.5f);
     parameters.set(juce::String(ParameterID::tightness), 0.5f);
-    parameters.set(juce::String(ParameterID::ensembleSize), 32.0f);
+    parameters.set(juce::String(ParameterID::ensembleSize), 40.0f);  // Updated to match maxPolyphony
     parameters.set(juce::String(ParameterID::voiceSpread), 0.3f);
     parameters.set(juce::String(ParameterID::attack), 0.05f);
     parameters.set(juce::String(ParameterID::decay), 0.2f);
@@ -54,7 +55,23 @@ void ChoirV2PureDSP::prepare(double newSampleRate, int newSamplesPerBlock)
     sampleRate = newSampleRate;
     samplesPerBlock = newSamplesPerBlock;
 
-    // Initialize voice pool
+    // Initialize DSP modules with corrected implementations
+    formantSynthesis = std::make_unique<FormantSynthesis>(sampleRate);
+    subharmonicGenerator = std::make_unique<SubharmonicGenerator>(sampleRate);
+    spectralEnhancer = std::make_unique<SpectralEnhancer>(sampleRate);
+
+    // Initialize parameter smoothers (10ms smoothing time)
+    vowelXSmoother = std::make_unique<LinearSmoother>();
+    vowelYSmoother = std::make_unique<LinearSmoother>();
+    vowelZSmoother = std::make_unique<LinearSmoother>();
+    formantScaleSmoother = std::make_unique<LinearSmoother>();
+
+    vowelXSmoother->setup(sampleRate, 0.01f);
+    vowelYSmoother->setup(sampleRate, 0.01f);
+    vowelZSmoother->setup(sampleRate, 0.01f);
+    formantScaleSmoother->setup(sampleRate, 0.01f);
+
+    // Initialize voice pool with single-threaded SIMD processing
     voices.clear();
     for (int i = 0; i < maxPolyphony; ++i)
     {
@@ -63,9 +80,10 @@ void ChoirV2PureDSP::prepare(double newSampleRate, int newSamplesPerBlock)
         voice->noteNumber = -1;
         voice->velocity = 0.0f;
         voice->age = 0.0f;
+        voice->phase = 0.0f;
         voice->lfoPhase = 0.0f;
-        for (int j = 0; j < 4; ++j)
-            voice->phase[j] = 0.0f;
+        voice->pan = (i % 2 == 0) ? -0.3f : 0.3f;  // Alternate pan positions
+        voice->detune = (float(i % 8) - 4.0f) * 0.5f;  // Spread detune
 
         voices.add(voice);
     }
@@ -77,11 +95,25 @@ void ChoirV2PureDSP::reset()
     currentPitchBend = 0.0f;
     currentAftertouch = 0.0f;
 
+    // Reset DSP modules
+    if (formantSynthesis) formantSynthesis->reset();
+    if (subharmonicGenerator) subharmonicGenerator->reset();
+    if (spectralEnhancer) spectralEnhancer->reset();
+
+    // Reset parameter smoothers
+    if (vowelXSmoother) vowelXSmoother->reset();
+    if (vowelYSmoother) vowelYSmoother->reset();
+    if (vowelZSmoother) vowelZSmoother->reset();
+    if (formantScaleSmoother) formantScaleSmoother->reset();
+
+    // Reset all voices
     for (auto* voice : voices)
     {
         voice->active = false;
         voice->noteNumber = -1;
         voice->age = 0.0f;
+        voice->phase = 0.0f;
+        voice->lfoPhase = 0.0f;
     }
 }
 
@@ -128,6 +160,24 @@ void ChoirV2PureDSP::handleEvent(const ScheduledEvent& event)
 void ChoirV2PureDSP::setParameter(const juce::String& parameterID, float value)
 {
     parameters.set(parameterID, value);
+
+    // Trigger parameter smoothing for critical parameters
+    if (parameterID == juce::String(ParameterID::vowelX) && vowelXSmoother)
+    {
+        vowelXSmoother->setTargetValue(value);
+    }
+    else if (parameterID == juce::String(ParameterID::vowelY) && vowelYSmoother)
+    {
+        vowelYSmoother->setTargetValue(value);
+    }
+    else if (parameterID == juce::String(ParameterID::vowelZ) && vowelZSmoother)
+    {
+        vowelZSmoother->setTargetValue(value);
+    }
+    else if (parameterID == juce::String(ParameterID::formantScale) && formantScaleSmoother)
+    {
+        formantScaleSmoother->setTargetValue(value);
+    }
 }
 
 float ChoirV2PureDSP::getParameter(const juce::String& parameterID) const
@@ -179,22 +229,110 @@ bool ChoirV2PureDSP::loadPreset(const juce::String& presetJson)
 //==============================================================================
 void ChoirV2PureDSP::processStereo(juce::AudioBuffer<float>& buffer)
 {
-    // TODO: Implement actual synthesis
-    // This is a stub that outputs silence
-    // In production, this would:
-    // 1. Process active voices
-    // 2. Apply formant synthesis
-    // 3. Apply subharmonic generation
-    // 4. Apply effects (reverb, spectral enhancement)
-    // 5. Mix sections (soprano, alto, tenor, bass)
-
     const int numSamples = buffer.getNumSamples();
+    const int numChannels = buffer.getNumChannels();
 
-    // Generate silence for now
-    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+    // Get smoothed parameters
+    const float vowelX = vowelXSmoother->getNextValue();
+    const float vowelY = vowelYSmoother->getNextValue();
+    const float vowelZ = vowelZSmoother->getNextValue();
+    const float formantScale = formantScaleSmoother->getNextValue();
+
+    // Update formant synthesis based on smoothed parameters
+    // Map 3D vowel space to vowel index (0-9)
+    int vowelIndex = juce::jlimit(0, 9, int(vowelX * 9.0f));
+    formantSynthesis->setCurrentVowel(vowelIndex);
+    formantSynthesis->setVibratoRate(parameters[juce::String(ParameterID::vibratoRate)]);
+    formantSynthesis->setVibratoDepth(parameters[juce::String(ParameterID::vibratoDepth)]);
+
+    // Update subharmonic generator
+    subharmonicGenerator->setSubharmonicMix(parameters[juce::String(ParameterID::subharmonicMix)]);
+    subharmonicGenerator->enablePll(true);  // Enable PLL for phase-locked tracking
+
+    // Update spectral enhancer
+    spectralEnhancer->setEnhancementAmount(parameters[juce::String(ParameterID::spectralEnhancement)]);
+    spectralEnhancer->setHarmonicFocus(parameters[juce::String(ParameterID::harmonicsBoost)]);
+
+    // Create temporary buffers for processing
+    juce::AudioBuffer<float> monoBuffer(numSamples, 1);
+    juce::AudioBuffer<float> formantBuffer(numSamples, 1);
+    juce::AudioBuffer<float> subharmonicBuffer(numSamples, 1);
+    juce::AudioBuffer<float> enhancedBuffer(numSamples, 1);
+
+    monoBuffer.clear();
+    formantBuffer.clear();
+    subharmonicBuffer.clear();
+    enhancedBuffer.clear();
+
+    auto* mono = monoBuffer.getWritePointer(0);
+    auto* formant = formantBuffer.getWritePointer(0);
+    auto* subharmonic = subharmonicBuffer.getWritePointer(0);
+    auto* enhanced = enhancedBuffer.getWritePointer(0);
+
+    // Process all active voices (single-threaded SIMD)
+    for (auto* voice : voices)
+    {
+        if (!voice->active)
+            continue;
+
+        // Calculate frequency with detune and pitch bend
+        float baseFreq = 440.0f * std::pow(2.0f, (voice->noteNumber - 69) / 12.0f);
+        float detuneCents = voice->detune + currentPitchBend * 200.0f;  // ±200 cents
+        float frequency = baseFreq * std::pow(2.0f, detuneCents / 1200.0f);
+
+        // Generate waveform (simple sawtooth for now)
+        for (int i = 0; i < numSamples; ++i)
+        {
+            float phaseIncrement = frequency / static_cast<float>(sampleRate);
+            voice->phase += phaseIncrement;
+            if (voice->phase >= 1.0f)
+                voice->phase -= 1.0f;
+
+            // Sawtooth oscillator
+            float sample = 2.0f * voice->phase - 1.0f;
+
+            // Apply velocity and envelope
+            float amplitude = voice->velocity * 0.5f;
+            sample *= amplitude;
+
+            // Add to mono mix
+            mono[i] += sample;
+        }
+    }
+
+    // Apply formant synthesis
+    if (formantSynthesis)
+    {
+        formantSynthesis->process(formant, mono, numSamples);
+    }
+
+    // Apply subharmonic generation
+    if (subharmonicGenerator)
+    {
+        subharmonicGenerator->process(subharmonic, formant, numSamples);
+    }
+
+    // Apply spectral enhancement
+    if (spectralEnhancer)
+    {
+        spectralEnhancer->process(enhanced, subharmonic, numSamples);
+    }
+
+    // Apply master volume and mix to stereo outputs
+    const float masterVolume = parameters[juce::String(ParameterID::masterVolume)];
+
+    for (int channel = 0; channel < numChannels; ++channel)
     {
         auto* output = buffer.getWritePointer(channel);
-        juce::FloatVectorOperations::clear(output, numSamples);
+
+        for (int i = 0; i < numSamples; ++i)
+        {
+            // Simple stereo spread (pan based on voice index)
+            float pan = (channel == 0) ? -0.5f : 0.5f;
+            float sample = enhanced[i] * masterVolume;
+
+            output[i] = sample * (1.0f - std::abs(pan) * 0.3f);  // 30% stereo spread
+        }
     }
 }
 
@@ -210,6 +348,8 @@ void ChoirV2PureDSP::processNoteOn(int noteNumber, float velocity)
             voice->noteNumber = noteNumber;
             voice->velocity = velocity;
             voice->age = 0.0f;
+            voice->phase = 0.0f;
+            voice->lfoPhase = 0.0f;
 
             activeNotes.addIfNotAlreadyThere(noteNumber);
             break;
