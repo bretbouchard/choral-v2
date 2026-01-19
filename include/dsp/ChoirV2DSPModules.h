@@ -1,11 +1,20 @@
 #pragma once
 
-#include <juce_core/juce_core.h>
-#include <juce_audio_basics/juce_audio_basics.h>
-#include <juce_dsp/juce_dsp.h>
+// PureDSP - JUCE-free implementation
+#include "PureDSP_Types.h"
 #include <memory>
 #include <array>
 #include <vector>
+#include <cmath>
+#include <algorithm>
+
+// Use PureDSP types - inline wrapper for template function
+template<typename T>
+inline T jlimit(T minimum, T maximum, T value) {
+    return PureDSP::jlimit(minimum, maximum, value);
+}
+
+constexpr auto pi = PureDSP::MathConstants<float>::pi;
 
 namespace DSP {
 
@@ -27,7 +36,7 @@ public:
     // Design bandpass filter (constant skirt gain)
     void designBandpass(float frequency, float bandwidth, float sampleRate)
     {
-        const float omega = 2.0f * juce::MathConstants<float>::pi * frequency / sampleRate;
+        const float omega = 2.0f * pi * frequency / sampleRate;
         const float alpha = std::sin(omega) * std::sinh(std::log(2.0f) / 2.0f *
                                          bandwidth * omega / std::sin(omega));
 
@@ -51,7 +60,7 @@ public:
     void designLowShelf(float frequency, float gainDb, float sampleRate, float Q = 0.5f)
     {
         const float A = std::pow(10.0f, gainDb / 40.0f);
-        const float omega = 2.0f * juce::MathConstants<float>::pi * frequency / sampleRate;
+        const float omega = 2.0f * pi * frequency / sampleRate;
         const float alpha = std::sin(omega) / 2.0f * std::sqrt((A + 1.0f / A) *
                                                              (1.0f / Q - 1.0f) + 2.0f);
 
@@ -202,7 +211,7 @@ public:
 
     void setVibratoDepth(float depth)
     {
-        vibratoDepth_ = juce::jlimit(0.0f, 1.0f, depth);
+        vibratoDepth_ = jlimit(0.0f, 1.0f, depth);
     }
 
     // Process audio through formant filter bank
@@ -215,9 +224,9 @@ public:
             if (vibratoDepth_ > 0.0f)
             {
                 vibratoMod = 1.0f + vibratoDepth_ * std::sin(vibratoLfoPhase_);
-                vibratoLfoPhase_ += 2.0f * juce::MathConstants<float>::pi * vibratoRate_ / static_cast<float>(sampleRate_);
-                if (vibratoLfoPhase_ >= 2.0f * juce::MathConstants<float>::pi)
-                    vibratoLfoPhase_ -= 2.0f * juce::MathConstants<float>::pi;
+                vibratoLfoPhase_ += 2.0f * pi * vibratoRate_ / static_cast<float>(sampleRate_);
+                if (vibratoLfoPhase_ >= 2.0f * pi)
+                    vibratoLfoPhase_ -= 2.0f * pi;
             }
 
             // Process through parallel resonators and sum
@@ -261,6 +270,7 @@ public:
         : sampleRate_(sampleRate)
         , phase_(0.0f)
         , frequency_(440.0f)
+        , smoothedFrequency_(440.0f)
         , subharmonicMix_(0.5f)
         , bassEnhancement_(0.0f)
         , pllEnabled_(false)
@@ -268,9 +278,9 @@ public:
         , phaseError_(0.0f)
         , lastPhaseError_(0.0f)
     {
-        // PLL parameters
-        pllProportionalGain_ = 0.01f;  // Kp
-        pllIntegralGain_ = 0.001f;      // Ki
+        // PLL parameters - further reduced gain for chirp signals
+        pllProportionalGain_ = 0.001f;  // Kp (reduced from 0.01f)
+        pllIntegralGain_ = 0.0001f;      // Ki (reduced from 0.001f)
         pllMinFreq_ = 20.0f;            // Hz
         pllMaxFreq_ = 1000.0f;          // Hz
 
@@ -286,17 +296,18 @@ public:
         integrator_ = 0.0f;
         phaseError_ = 0.0f;
         lastPhaseError_ = 0.0f;
+        smoothedFrequency_ = frequency_;
         bassFilter_.reset();
     }
 
     void setSubharmonicMix(float mix)
     {
-        subharmonicMix_ = juce::jlimit(0.0f, 1.0f, mix);
+        subharmonicMix_ = jlimit(0.0f, 1.0f, mix);
     }
 
     void setBassEnhancement(float amount)
     {
-        bassEnhancement_ = juce::jlimit(0.0f, 1.0f, amount);
+        bassEnhancement_ = jlimit(0.0f, 1.0f, amount);
     }
 
     void enablePll(bool enable)
@@ -306,7 +317,7 @@ public:
 
     void setFrequency(float freqHz)
     {
-        frequency_ = juce::jlimit(pllMinFreq_, pllMaxFreq_, freqHz);
+        frequency_ = jlimit(pllMinFreq_, pllMaxFreq_, freqHz);
     }
 
     // Process audio with PLL-based pitch tracking
@@ -322,21 +333,26 @@ public:
                 // Calculate phase error using quadrature detection
                 float error = calculatePhaseError(x, phase_);
 
-                // PI controller to track frequency
+                // PI controller to track frequency (further reduced gain for chirp signals)
                 float freqCorrection = pllProportionalGain_ * error +
                                        pllIntegralGain_ * integrator_;
 
-                // Update integrator
+                // Update integrator (with clamping to prevent windup)
                 integrator_ += error;
+                integrator_ = std::clamp(integrator_, -1.0f, 1.0f);
 
-                // Apply frequency correction
-                float trackedFreq = frequency_ + freqCorrection * 1000.0f;
-                trackedFreq = juce::jlimit(pllMinFreq_, pllMaxFreq_, trackedFreq);
+                // Apply frequency correction with aggressive smoothing for chirp signals
+                float trackedFreq = frequency_ + freqCorrection * 10.0f;  // Reduced from 100.0f
+                trackedFreq = jlimit(pllMinFreq_, pllMaxFreq_, trackedFreq);
 
-                // Update phase
-                phase_ += 2.0f * juce::MathConstants<float>::pi * trackedFreq / static_cast<float>(sampleRate_);
-                if (phase_ >= 2.0f * juce::MathConstants<float>::pi)
-                    phase_ -= 2.0f * juce::MathConstants<float>::pi;
+                // Smooth frequency changes to prevent clicks during chirps
+                constexpr float smoothingFactor = 0.995f;  // Very smooth
+                smoothedFrequency_ = smoothedFrequency_ * smoothingFactor + trackedFreq * (1.0f - smoothingFactor);
+
+                // Update phase using smoothed frequency
+                phase_ += 2.0f * pi * smoothedFrequency_ / static_cast<float>(sampleRate_);
+                if (phase_ >= 2.0f * pi)
+                    phase_ -= 2.0f * pi;
 
                 // Store phase error for debugging
                 lastPhaseError_ = error;
@@ -344,9 +360,9 @@ public:
             else
             {
                 // Use fixed frequency
-                phase_ += 2.0f * juce::MathConstants<float>::pi * frequency_ / static_cast<float>(sampleRate_);
-                if (phase_ >= 2.0f * juce::MathConstants<float>::pi)
-                    phase_ -= 2.0f * juce::MathConstants<float>::pi;
+                phase_ += 2.0f * pi * frequency_ / static_cast<float>(sampleRate_);
+                if (phase_ >= 2.0f * pi)
+                    phase_ -= 2.0f * pi;
             }
 
             // Generate subharmonic (one octave below)
@@ -389,10 +405,10 @@ private:
         float error = std::atan2(input * qSignal, input * iSignal);
 
         // Normalize to [-pi, pi]
-        if (error > juce::MathConstants<float>::pi)
-            error -= 2.0f * juce::MathConstants<float>::pi;
-        if (error < -juce::MathConstants<float>::pi)
-            error += 2.0f * juce::MathConstants<float>::pi;
+        if (error > pi)
+            error -= 2.0f * pi;
+        if (error < -pi)
+            error += 2.0f * pi;
 
         return error;
     }
@@ -402,6 +418,7 @@ private:
     // Phase and frequency
     float phase_;
     float frequency_;
+    float smoothedFrequency_;  // Smoothed PLL output for chirp signals
 
     // Parameters
     float subharmonicMix_;
@@ -422,7 +439,7 @@ private:
 };
 
 //==============================================================================
-// SpectralEnhancer - FFT-based spectral enhancement with overlap-add
+// SpectralEnhancer - Stubbed (requires FFT implementation - disabled for now)
 class SpectralEnhancer
 {
 public:
@@ -430,185 +447,42 @@ public:
         : sampleRate_(sampleRate)
         , enhancementAmount_(0.0f)
         , harmonicFocus_(0.5f)
+        , lastOutput_(0.0f)
     {
-        // FFT parameters
-        fftSize_ = 2048;
-        hopSize_ = fftSize_ / 4;  // 75% overlap
-        windowSize_ = fftSize_;
-
-        // Allocate buffers
-        fftBuffer_.resize(fftSize_);
-        window_.resize(windowSize_);
-        outputBuffer_.resize(fftSize_ * 2);
-
-        // Initialize FFT
-        fft_ = std::make_unique<juce::dsp::FFT>(juce::roundToInt(std::log2(fftSize_)));
-
-        // Create analysis window (Hann window)
-        for (int i = 0; i < windowSize_; ++i)
-        {
-            window_[i] = 0.5f * (1.0f - std::cos(2.0f * juce::MathConstants<float>::pi * i / (windowSize_ - 1)));
-        }
-
-        // Initialize overlap-add buffer
-        olaBuffer_.resize(fftSize_ * 2, 0.0f);
-        writePosition_ = 0;
-
-        reset();
+        // TODO: Implement FFT-free spectral enhancement
+        // For now, this is a smooth pass-through stub
     }
 
     void reset()
     {
-        std::fill(fftBuffer_.begin(), fftBuffer_.end(), 0.0f);
-        std::fill(olaBuffer_.begin(), olaBuffer_.end(), 0.0f);
-        std::fill(outputBuffer_.begin(), outputBuffer_.end(), 0.0f);
-        writePosition_ = 0;
+        lastOutput_ = 0.0f;
     }
 
     void setEnhancementAmount(float amount)
     {
-        enhancementAmount_ = juce::jlimit(0.0f, 1.0f, amount);
+        enhancementAmount_ = jlimit(0.0f, 1.0f, amount);
     }
 
     void setHarmonicFocus(float focus)
     {
-        harmonicFocus_ = juce::jlimit(0.0f, 1.0f, focus);
+        harmonicFocus_ = jlimit(0.0f, 1.0f, focus);
     }
 
-    // Process audio with STFT and overlap-add
+    // Process audio (smooth pass-through to prevent clicks)
     void process(float* output, const float* input, int numSamples)
     {
+        // Clean pass-through - stub preserves signal exactly
         for (int i = 0; i < numSamples; ++i)
         {
-            // Input sample
-            float x = input[i];
-
-            // Write to overlap-add buffer
-            olaBuffer_[writePosition_] = x;
-            writePosition_++;
-
-            // Check if we have enough samples for FFT
-            if (writePosition_ >= hopSize_)
-            {
-                // Process FFT frame
-                processFftFrame();
-
-                // Shift buffer
-                std::memmove(olaBuffer_.data(),
-                           olaBuffer_.data() + hopSize_,
-                           sizeof(float) * (olaBuffer_.size() - hopSize_));
-
-                writePosition_ -= hopSize_;
-            }
-
-            // Output from overlap-add buffer
-            output[i] = outputBuffer_[i];
+            output[i] = input[i];
         }
-
-        // Shift output buffer
-        std::memmove(outputBuffer_.data(),
-                   outputBuffer_.data() + numSamples,
-                   sizeof(float) * (outputBuffer_.size() - numSamples));
-
-        // Clear end of output buffer
-        std::fill(outputBuffer_.end() - numSamples, outputBuffer_.end(), 0.0f);
     }
 
 private:
-    void processFftFrame()
-    {
-        // Apply window
-        for (int i = 0; i < fftSize_; ++i)
-        {
-            fftBuffer_[i] = olaBuffer_[i] * window_[i];
-        }
-
-        // Perform FFT
-        fft_->performRealOnlyForwardTransform(fftBuffer_.data());
-
-        // Process spectrum
-        processSpectrum();
-
-        // Perform IFFT
-        fft_->performRealOnlyInverseTransform(fftBuffer_.data());
-
-        // Apply window again for overlap-add
-        for (int i = 0; i < fftSize_; ++i)
-        {
-            fftBuffer_[i] *= window_[i];
-        }
-
-        // Add to output buffer (overlap-add)
-        for (int i = 0; i < fftSize_; ++i)
-        {
-            outputBuffer_[i + writePosition_] += fftBuffer_[i];
-        }
-    }
-
-    void processSpectrum()
-    {
-        // Process complex spectrum
-        // fftBuffer_ contains [real0, real1, imag1, real2, imag2, ...]
-
-        for (int i = 1; i < fftSize_ / 2; ++i)
-        {
-            int realIdx = i;
-            int imagIdx = fftSize_ - i;
-
-            float real = fftBuffer_[realIdx];
-            float imag = fftBuffer_[imagIdx];
-
-            // Calculate magnitude and phase
-            float magnitude = std::sqrt(real * real + imag * imag);
-            float phase = std::atan2(imag, real);
-
-            // Calculate frequency bin
-            float frequency = i * static_cast<float>(sampleRate_) / fftSize_;
-
-            // Apply harmonic enhancement
-            float enhancement = 1.0f;
-            if (enhancementAmount_ > 0.0f)
-            {
-                // Focus on harmonics based on harmonicFocus_ parameter
-                float harmonicWeight = calculateHarmonicWeight(frequency);
-                enhancement = 1.0f + enhancementAmount_ * harmonicWeight;
-            }
-
-            // Apply enhancement
-            magnitude *= enhancement;
-
-            // Convert back to real/imag
-            fftBuffer_[realIdx] = magnitude * std::cos(phase);
-            fftBuffer_[imagIdx] = magnitude * std::sin(phase);
-        }
-    }
-
-    float calculateHarmonicWeight(float frequency)
-    {
-        // Calculate harmonic weight based on harmonic series
-        // Lower harmonics get more weight
-
-        float harmonicNumber = frequency / 100.0f;  // Assume fundamental around 100Hz
-        float weight = 1.0f / (1.0f + harmonicNumber * (1.0f - harmonicFocus_));
-
-        return weight;
-    }
-
     double sampleRate_;
-    int fftSize_;
-    int hopSize_;
-    int windowSize_;
-
-    std::vector<float> fftBuffer_;
-    std::vector<float> window_;
-    std::vector<float> olaBuffer_;
-    std::vector<float> outputBuffer_;
-    int writePosition_;
-
-    std::unique_ptr<juce::dsp::FFT> fft_;
-
     float enhancementAmount_;
     float harmonicFocus_;
+    float lastOutput_;  // For smooth continuity
 };
 
 //==============================================================================

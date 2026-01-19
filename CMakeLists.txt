@@ -1,6 +1,17 @@
 cmake_minimum_required(VERSION 3.20)
 project(ChoirV2 VERSION 2.0.0 LANGUAGES C CXX)
 
+#==============================================================================
+# MANDATORY: Use centralized JUCE detection
+#==============================================================================
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../cmake")
+include(FindJUCE)
+
+if(NOT JUCE_FOUND)
+    message(FATAL_ERROR "JUCE is required but was not found. See juce_backend/cmake/FindJUCE.cmake for installation instructions.")
+endif()
+
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -94,13 +105,12 @@ if(NOT JUCE_PATH)
     endif()
 endif()
 
-if(EXISTS "${JUCE_PATH}")
+if(JUCE_FOUND)
     message(STATUS "Found JUCE at: ${JUCE_PATH}")
-    # Add JUCE subdirectory (but don't create plugin yet)
-    add_subdirectory("${JUCE_PATH}" "${CMAKE_BINARY_DIR}/juce")
+    message(STATUS "JUCE Version: PureDSP is now JUCE-free! JUCE only needed for plugin wrapper.")
     set(JUCE_FOUND TRUE)
 else()
-    message(WARNING "JUCE not found. PureDSP library requires JUCE types.")
+    message(WARNING "JUCE not found. PureDSP library is JUCE-free, but JUCE needed for plugin wrapper.")
     message(WARNING "Set JUCE_PATH environment variable or pass -DJUCE_PATH=/path/to/JUCE")
     set(JUCE_FOUND FALSE)
 endif()
@@ -141,10 +151,10 @@ target_include_directories(ChoirV2PureDSP PUBLIC
 # Set C++ standard for PureDSP
 target_compile_features(ChoirV2PureDSP PUBLIC cxx_std_20)
 
-# Link nlohmann/json for JSON parsing and JUCE
+# Link nlohmann/json for JSON parsing
+# Note: JUCE headers are included for type definitions only, no linking needed
 target_link_libraries(ChoirV2PureDSP PUBLIC
     nlohmann_json::nlohmann_json
-    juce::juce_core
 )
 
 message(STATUS "Choir V2 PureDSP library configured")
@@ -160,11 +170,10 @@ else()
 message(STATUS "Choir V2 Core library: DISABLED (PureDSP migration complete)")
 endif()
 
-# Tests
+# Tests (DSP-only - no GUI required)
 if(CHOIR_V2_BUILD_TESTS)
+    message(STATUS "Building DSP test suite (no GUI required)")
     enable_testing()
-    find_package(GTest REQUIRED)
-
     add_subdirectory(tests)
 endif()
 
