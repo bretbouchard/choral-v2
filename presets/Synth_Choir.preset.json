@@ -1,0 +1,53 @@
+{
+  "presetName": "Synth Choir",
+  "author": "Bret Bouchard",
+  "description": "Synthetic choir with boosted harmonics and modern electronic sound",
+  "tags": ["synth", "electronic", "bright", "modern"],
+  "parameters": {
+    "masterVolume": 0.85,
+    "polyphony": 16,
+    "ensembleSpread": 0.5,
+
+    "voiceSectionSoprano": 0.9,
+    "voiceSectionAlto": 0.7,
+    "voiceSectionTenor": 0.6,
+    "voiceSectionBass": 0.5,
+
+    "vowelA": 0.1,
+    "vowelE": 0.2,
+    "vowelI": 0.3,
+    "vowelO": 0.25,
+    "vowelU": 0.15,
+
+    "formantShift": 0.6,
+    "vibratoRate": 5.5,
+    "vibratoDepth": 0.1,
+    "vibratoDelay": 0.25,
+
+    "attack": 0.15,
+    "decay": 0.2,
+    "sustain": 0.9,
+    "release": 0.6,
+
+    "subharmonicMix": 0.4,
+    "subharmonicOctave": 0.5,
+    "pllEnabled": true,
+    "pllSensitivity": 0.6,
+
+    "spectralEnhancement": 0.8,
+    "harmonicFocus": 0.8,
+    "bassEnhancement": 0.7,
+
+    "reverbMix": 0.4,
+    "reverbSize": 0.5,
+    "reverbDecay": 0.5,
+    "reverbPredelay": 0.05,
+    "reverbLowCut": 0.5,
+    "reverbHighCut": 0.85,
+
+    "breathNoise": 0.15,
+    "noiseFilter": 0.8,
+    "stereoWidth": 0.7,
+    "detune": 0.06
+  }
+}

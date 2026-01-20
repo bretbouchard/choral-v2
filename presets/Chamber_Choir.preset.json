@@ -1,0 +1,53 @@
+{
+  "presetName": "Chamber Choir",
+  "author": "Bret Bouchard",
+  "description": "Intimate chamber ensemble with dry, focused sound",
+  "tags": ["chamber", "intimate", "dry", "classical"],
+  "parameters": {
+    "masterVolume": 0.8,
+    "polyphony": 24,
+    "ensembleSpread": 0.35,
+
+    "voiceSectionSoprano": 0.85,
+    "voiceSectionAlto": 0.8,
+    "voiceSectionTenor": 0.7,
+    "voiceSectionBass": 0.6,
+
+    "vowelA": 0.2,
+    "vowelE": 0.25,
+    "vowelI": 0.2,
+    "vowelO": 0.2,
+    "vowelU": 0.15,
+
+    "formantShift": 0.5,
+    "vibratoRate": 5.0,
+    "vibratoDepth": 0.12,
+    "vibratoDelay": 0.4,
+
+    "attack": 0.25,
+    "decay": 0.2,
+    "sustain": 0.85,
+    "release": 0.8,
+
+    "subharmonicMix": 0.3,
+    "subharmonicOctave": 0.5,
+    "pllEnabled": true,
+    "pllSensitivity": 0.5,
+
+    "spectralEnhancement": 0.25,
+    "harmonicFocus": 0.5,
+    "bassEnhancement": 0.4,
+
+    "reverbMix": 0.15,
+    "reverbSize": 0.3,
+    "reverbDecay": 0.4,
+    "reverbPredelay": 0.05,
+    "reverbLowCut": 0.4,
+    "reverbHighCut": 0.8,
+
+    "breathNoise": 0.2,
+    "noiseFilter": 0.7,
+    "stereoWidth": 0.6,
+    "detune": 0.05
+  }
+}

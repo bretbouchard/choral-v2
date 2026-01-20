@@ -1,0 +1,53 @@
+{
+  "presetName": "Ethereal Choir",
+  "author": "Bret Bouchard",
+  "description": "Soft, breathy, and atmospheric - perfect for ambient music",
+  "tags": ["ethereal", "ambient", "soft", "atmospheric"],
+  "parameters": {
+    "masterVolume": 0.75,
+    "polyphony": 32,
+    "ensembleSpread": 0.8,
+
+    "voiceSectionSoprano": 0.7,
+    "voiceSectionAlto": 0.75,
+    "voiceSectionTenor": 0.6,
+    "voiceSectionBass": 0.5,
+
+    "vowelA": 0.15,
+    "vowelE": 0.25,
+    "vowelI": 0.2,
+    "vowelO": 0.25,
+    "vowelU": 0.15,
+
+    "formantShift": 0.45,
+    "vibratoRate": 4.0,
+    "vibratoDepth": 0.08,
+    "vibratoDelay": 0.6,
+
+    "attack": 0.6,
+    "decay": 0.4,
+    "sustain": 0.8,
+    "release": 2.0,
+
+    "subharmonicMix": 0.35,
+    "subharmonicOctave": 0.5,
+    "pllEnabled": true,
+    "pllSensitivity": 0.4,
+
+    "spectralEnhancement": 0.3,
+    "harmonicFocus": 0.4,
+    "bassEnhancement": 0.35,
+
+    "reverbMix": 0.85,
+    "reverbSize": 0.95,
+    "reverbDecay": 0.9,
+    "reverbPredelay": 0.2,
+    "reverbLowCut": 0.25,
+    "reverbHighCut": 0.65,
+
+    "breathNoise": 0.5,
+    "noiseFilter": 0.45,
+    "stereoWidth": 0.9,
+    "detune": 0.15
+  }
+}

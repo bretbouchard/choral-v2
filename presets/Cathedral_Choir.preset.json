@@ -1,0 +1,53 @@
+{
+  "presetName": "Cathedral Choir",
+  "author": "Bret Bouchard",
+  "description": "Large cathedral ensemble with rich reverb and deep subharmonics",
+  "tags": ["cathedral", "large", "reverb", "ambient"],
+  "parameters": {
+    "masterVolume": 0.85,
+    "polyphony": 40,
+    "ensembleSpread": 0.7,
+
+    "voiceSectionSoprano": 0.9,
+    "voiceSectionAlto": 0.8,
+    "voiceSectionTenor": 0.7,
+    "voiceSectionBass": 0.85,
+
+    "vowelA": 0.15,
+    "vowelE": 0.2,
+    "vowelI": 0.1,
+    "vowelO": 0.3,
+    "vowelU": 0.25,
+
+    "formantShift": 0.5,
+    "vibratoRate": 4.5,
+    "vibratoDepth": 0.15,
+    "vibratoDelay": 0.3,
+
+    "attack": 0.4,
+    "decay": 0.3,
+    "sustain": 0.9,
+    "release": 1.5,
+
+    "subharmonicMix": 0.65,
+    "subharmonicOctave": 0.5,
+    "pllEnabled": true,
+    "pllSensitivity": 0.6,
+
+    "spectralEnhancement": 0.45,
+    "harmonicFocus": 0.6,
+    "bassEnhancement": 0.7,
+
+    "reverbMix": 0.75,
+    "reverbSize": 0.9,
+    "reverbDecay": 0.85,
+    "reverbPredelay": 0.15,
+    "reverbLowCut": 0.3,
+    "reverbHighCut": 0.7,
+
+    "breathNoise": 0.35,
+    "noiseFilter": 0.6,
+    "stereoWidth": 0.85,
+    "detune": 0.08
+  }
+}

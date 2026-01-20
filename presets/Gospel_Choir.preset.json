@@ -1,0 +1,53 @@
+{
+  "presetName": "Gospel Choir",
+  "author": "Bret Bouchard",
+  "description": "Energetic gospel ensemble with strong vibrato and rich harmonics",
+  "tags": ["gospel", "energetic", "vibrato", "soulful"],
+  "parameters": {
+    "masterVolume": 0.9,
+    "polyphony": 32,
+    "ensembleSpread": 0.6,
+
+    "voiceSectionSoprano": 0.95,
+    "voiceSectionAlto": 0.85,
+    "voiceSectionTenor": 0.75,
+    "voiceSectionBass": 0.7,
+
+    "vowelA": 0.1,
+    "vowelE": 0.15,
+    "vowelI": 0.3,
+    "vowelO": 0.25,
+    "vowelU": 0.2,
+
+    "formantShift": 0.55,
+    "vibratoRate": 6.0,
+    "vibratoDepth": 0.25,
+    "vibratoDelay": 0.2,
+
+    "attack": 0.3,
+    "decay": 0.25,
+    "sustain": 0.95,
+    "release": 1.0,
+
+    "subharmonicMix": 0.5,
+    "subharmonicOctave": 0.5,
+    "pllEnabled": true,
+    "pllSensitivity": 0.7,
+
+    "spectralEnhancement": 0.6,
+    "harmonicFocus": 0.7,
+    "bassEnhancement": 0.65,
+
+    "reverbMix": 0.5,
+    "reverbSize": 0.6,
+    "reverbDecay": 0.65,
+    "reverbPredelay": 0.1,
+    "reverbLowCut": 0.35,
+    "reverbHighCut": 0.75,
+
+    "breathNoise": 0.45,
+    "noiseFilter": 0.5,
+    "stereoWidth": 0.75,
+    "detune": 0.12
+  }
+}
