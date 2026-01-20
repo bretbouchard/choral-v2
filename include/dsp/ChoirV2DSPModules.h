@@ -2,6 +2,7 @@
 
 // PureDSP - JUCE-free implementation
 #include "PureDSP_Types.h"
+#include "PureDSPFFT.h"
 #include <memory>
 #include <array>
 #include <vector>
@@ -452,8 +453,8 @@ public:
         , writeIndex_(0)
         , readyToProcess_(false)
     {
-        // Initialize FFT
-        fft_ = std::make_unique<FFT>(fftSize_, false);
+        // Initialize PureDSP FFT
+        fft_ = std::make_unique<PureDSP::FFT>(fftSize_);
 
         // Allocate buffers
         int numBins = fftSize_ / 2 + 1;
@@ -464,6 +465,7 @@ public:
         outputBuffer_.resize(fftSize_, 0.0f);
         magnitudeBuffer_.resize(numBins, 0.0f);
         phaseBuffer_.resize(numBins, 0.0f);
+        complexBuffer_.resize(numBins);
 
         // Create Hann window for smooth overlap-add
         for (int i = 0; i < fftSize_; ++i)
@@ -536,54 +538,6 @@ public:
     }
 
 private:
-    // Simple FFT wrapper (using JUCE FFT)
-    class FFT
-    {
-    public:
-        FFT(int size, bool isInverse)
-            : size_(size)
-            , isInverse_(isInverse)
-        {
-            // JUCE FFT would be initialized here
-            // For now, we'll use a placeholder
-        }
-
-        ~FFT() = default;
-
-        void perform(const float* inputReal, float* outputReal)
-        {
-            // Placeholder for JUCE FFT perform
-            // This would call: fft->perform(input, output, isInverse_);
-            // For now, just copy to prevent crashes
-            for (int i = 0; i < size_; ++i)
-            {
-                outputReal[i] = inputReal[i];
-            }
-        }
-
-        void performRealOnlyForwardTransform(const float* inputReal, float* outputReal)
-        {
-            // Placeholder for forward FFT
-            for (int i = 0; i < size_; ++i)
-            {
-                outputReal[i] = inputReal[i];
-            }
-        }
-
-        void performRealOnlyInverseTransform(const float* inputReal, float* outputReal)
-        {
-            // Placeholder for inverse FFT
-            for (int i = 0; i < size_; ++i)
-            {
-                outputReal[i] = inputReal[i];
-            }
-        }
-
-    private:
-        int size_;
-        bool isInverse_;
-    };
-
     void processFrame()
     {
         // Apply window to input
@@ -592,34 +546,31 @@ private:
             fftBuffer_[i] = inputBuffer_[i] * windowBuffer_[i];
         }
 
-        // Perform forward FFT
+        // Perform forward FFT (real-valued)
         int numBins = fftSize_ / 2 + 1;
-        std::vector<float> fftOutput(fftSize_);
-        fft_->performRealOnlyForwardTransform(fftBuffer_.data(), fftOutput.data());
+        fft_->realForward(fftBuffer_.data(), complexBuffer_.data());
 
         // Convert to magnitude/phase
         for (int i = 0; i < numBins; ++i)
         {
-            float real = fftOutput[i * 2];
-            float imag = fftOutput[i * 2 + 1];
-            magnitudeBuffer_[i] = std::sqrt(real * real + imag * imag);
-            phaseBuffer_[i] = std::atan2(imag, real);
+            magnitudeBuffer_[i] = std::abs(complexBuffer_[i]);
+            phaseBuffer_[i] = std::arg(complexBuffer_[i]);
         }
 
         // Apply spectral enhancement
         enhanceSpectrum(magnitudeBuffer_.data(), numBins);
 
-        // Convert back to real/imag
+        // Convert back to complex
         for (int i = 0; i < numBins; ++i)
         {
-            float mag = magnitudeBuffer_[i];
-            float phase = phaseBuffer_[i];
-            fftOutput[i * 2] = mag * std::cos(phase);
-            fftOutput[i * 2 + 1] = mag * std::sin(phase);
+            complexBuffer_[i] = PureDSP::FFT::Complex(
+                magnitudeBuffer_[i] * std::cos(phaseBuffer_[i]),
+                magnitudeBuffer_[i] * std::sin(phaseBuffer_[i])
+            );
         }
 
-        // Perform inverse FFT
-        fft_->performRealOnlyInverseTransform(fftOutput.data(), outputBuffer_.data());
+        // Perform inverse FFT (real-valued)
+        fft_->realInverse(complexBuffer_.data(), outputBuffer_.data());
 
         // Apply window and overlap-add
         for (int i = 0; i < fftSize_; ++i)
@@ -682,7 +633,7 @@ private:
     int hopSize_;
 
     // FFT object
-    std::unique_ptr<FFT> fft_;
+    std::unique_ptr<PureDSP::FFT> fft_;
 
     // Buffers
     std::vector<float> fftBuffer_;
@@ -692,6 +643,7 @@ private:
     std::vector<float> outputBuffer_;
     std::vector<float> magnitudeBuffer_;
     std::vector<float> phaseBuffer_;
+    std::vector<PureDSP::FFT::Complex> complexBuffer_;
 
     // State
     int writeIndex_;
