@@ -187,6 +187,9 @@ endif()
 # JUCE Plugin
 if(CHOIR_V2_BUILD_PLUGIN)
     if(JUCE_FOUND)
+        # Include JUCE CMake support for juce_add_plugin command
+        find_package(JUCE CONFIG REQUIRED HINTS ${JUCE_PATH})
+
         # Create JUCE plugin
         juce_add_plugin(ChoirV2Plugin
             COMPANY_NAME "Bret Bouchard"
